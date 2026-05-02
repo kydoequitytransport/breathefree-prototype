@@ -1458,8 +1458,9 @@ window.addEventListener('online', async () => {
   } catch (e) {
     console.warn('hydrateState failed', e);
   }
-  // If we have a populated state object, show Home; otherwise start onboarding
-  if (state && Object.keys(state).length) {
+  // Show Home only if there is a logged-in session OR a clearly-initialized state.
+  // This avoids skipping onboarding when a partial/empty `state` object exists in localStorage.
+  if (user_id || (state && state.name && state.startedAt)) {
     recomputeRunState();
     saveState();
     showHome();
