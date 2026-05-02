@@ -672,10 +672,12 @@
     <span>Craving now</span>
   </button>
   <!-- SOS button for emergency cravings -->
+  <!-- SOS button temporarily disabled per request
   <button class="fab-sos" onclick="openModal('sos-modal')">
     <span>🛟</span>
     <span>SOS</span>
   </button>
+  -->
 </div>
 
 <!-- ============ MILESTONES VIEW ============ -->
@@ -1146,6 +1148,7 @@
 </div>
 
 <!-- SOS modal — when craving is urgent -->
+<!-- SOS modal temporarily disabled per request
 <div class="modal-backdrop" id="sos-modal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -1158,6 +1161,7 @@
     <button class="link" style="margin: 14px auto 0; display: block;" onclick="closeModal('sos-modal'); openSlip();">I slipped — log it</button>
   </div>
 </div>
+-->
 
 <!-- Commitment contract modal -->
 <div class="modal-backdrop" id="commit-modal">
@@ -1249,7 +1253,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Handle signup during onboarding (step 1)
 async function handleSignup(email, password) {
   try {
-    const { data, error } = await sb.auth.signUp({ email, password });
+    const { data, error } = await sb.auth.signUp({ email, password }, { redirectTo: window.location.origin });
     if (error) throw error;
     return data;
   } catch (err) {
@@ -1268,7 +1272,9 @@ async function handleLogin() {
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) throw error;
     closeModal('login-modal');
-    location.reload();
+    // Hydrate Supabase-backed state for this user now that we're logged in
+    try { await hydrateState(); } catch (e) { console.warn('hydrateState after login failed', e); }
+    showHome();
   } catch (err) {
     errorDiv.textContent = err.message || 'Login failed';
   }
@@ -1322,6 +1328,10 @@ window.onbFinish = async function() {
   if (email && password) {
     try {
       await handleSignup(email, password);
+      // Try to sign in immediately so we have a session and user_id available
+      try { await sb.auth.signInWithPassword({ email, password }); } catch (e) { /* ignore sign-in failure (e.g. email confirmation required) */ }
+      // Ensure Supabase state is hydrated before finalizing onboarding so saveState() will write to Supabase
+      try { await hydrateState(); } catch (e) { /* hydration best-effort */ }
       origOnbFinish();
     } catch (e) {
       // error handled in handleSignup
@@ -1340,7 +1350,24 @@ let supaWriteQueue = [];
 
 // Migration block (preserve, run after hydration)
 function runMigrationBlock() {
-  // ...existing migration logic...
+  // Normalize older state shapes:
+  if (!state) return;
+  // If runStartDate is a date-only string (YYYY-MM-DD), convert to an ISO datetime.
+  if (state.runStartDate && /^\d{4}-\d{2}-\d{2}$/.test(state.runStartDate)) {
+    // Prefer an explicit startedAt timestamp if available, otherwise use midnight of that date.
+    if (state.startedAt) {
+      state.runStartDate = new Date(state.startedAt).toISOString();
+    } else {
+      // Treat date-only as local midnight -> convert to ISO by appending T00:00:00
+      const iso = new Date(state.runStartDate + 'T00:00:00').toISOString();
+      state.runStartDate = iso;
+    }
+  }
+  // Ensure arrays exist and are normalized
+  state.unlockedMilestones = state.unlockedMilestones ? Array.from(new Set(state.unlockedMilestones)) : [];
+  state.checkinsLogged = state.checkinsLogged || [];
+  state.riskyDayPlans = state.riskyDayPlans || [];
+  state.customRituals = state.customRituals || [];
 }
 
 // Hydrate state from Supabase or localStorage
@@ -1354,6 +1381,8 @@ async function hydrateState() {
       state = data.state;
       event_log = data.event_log;
       supaReady = true;
+      // Ensure arrays are normalized (no accidental duplicates from prior writes)
+      if (state.unlockedMilestones) state.unlockedMilestones = Array.from(new Set(state.unlockedMilestones));
       runMigrationBlock();
       // Optionally, update localStorage as fallback
       localStorage.setItem('bf_state', JSON.stringify(state));
@@ -1364,6 +1393,7 @@ async function hydrateState() {
       event_log = JSON.parse(localStorage.getItem('bf_event_log') || '[]');
       supaReady = true;
       runMigrationBlock();
+      if (state.unlockedMilestones) state.unlockedMilestones = Array.from(new Set(state.unlockedMilestones));
       // Insert initial row
       await sb.from('user_data').upsert({ user_id, state, event_log });
     }
@@ -1393,6 +1423,8 @@ function queueSupabaseWrite() {
 
 // On any state change, call this instead of direct localStorage
 function saveState() {
+  // Normalize arrays to avoid duplicate entries being written to Supabase
+  if (state && state.unlockedMilestones) state.unlockedMilestones = Array.from(new Set(state.unlockedMilestones));
   localStorage.setItem('bf_state', JSON.stringify(state));
   localStorage.setItem('bf_event_log', JSON.stringify(event_log));
   queueSupabaseWrite();
@@ -1417,10 +1449,27 @@ window.addEventListener('online', async () => {
   }
 });
 
-// On app load, hydrate state
-hydrateState();
+// On app load, hydrate state and then decide initial view
 // celebrate: true = fires big modal + confetti + share-to-Circle button.
 // celebrate: false = shows in timeline as unlocked, no interruption.
+;(async function init() {
+  try {
+    await hydrateState();
+  } catch (e) {
+    console.warn('hydrateState failed', e);
+  }
+  // If we have a populated state object, show Home; otherwise start onboarding
+  if (state && Object.keys(state).length) {
+    recomputeRunState();
+    saveState();
+    showHome();
+  } else {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('onb-quitdate').value = today;
+    showView('onboarding');
+  }
+})();
+
 const MILESTONES = [
   { hours: 0.33, key: '20min', celebrate: false, title: 'Heart rate drops', emoji: '❤️', fact: 'Your heart rate and blood pressure just dropped back to normal. This is what the first 20 nicotine-free minutes feel like — and you did it.' },
   { hours: 8, key: '8hr', celebrate: false, title: 'Carbon monoxide halved', emoji: '🫁', fact: 'Half the carbon monoxide you were breathing is already gone. Your blood is carrying oxygen again, not smoke.' },
@@ -1524,9 +1573,10 @@ function onbFinish() {
   onbData.trigger = trigger.dataset.value;
 
   // Quit date drives everything. runStartDate = quitDate initially; resets only on slip.
+  // Quit date is the user's chosen day, but the run start should use the exact registration datetime.
   state = {
     ...onbData,
-    runStartDate: onbData.quitDate,
+    runStartDate: new Date().toISOString(),
     slipCount: 0,
     cravingsBeat: 0,
     checkinsLogged: [],
@@ -1586,7 +1636,8 @@ function hoursSinceRunStart() {
 }
 function daysSinceQuit() {
   if (!state) return 0;
-  const start = new Date(state.quitDate).getTime();
+  // Prefer the precise run start datetime (registration or last reset on slip). Fall back to quitDate for legacy data.
+  const start = new Date(state.runStartDate || state.quitDate).getTime();
   return Math.max(0, Math.floor((Date.now() - start) / 86400000));
 }
 function daysSinceRunStart() {
@@ -1595,8 +1646,13 @@ function daysSinceRunStart() {
 function recomputeRunState() {
   if (!state) return;
   state.currentRun = daysSinceRunStart();
-  state.totalCleanDays = Math.max(0, daysSinceQuit() - (state.slipCount || 0));
+  // Total clean days should be based on the run start datetime, resetting on slip.
+  state.totalCleanDays = Math.max(0, daysSinceRunStart() - (state.slipCount || 0));
   state.bestRun = Math.max(state.bestRun || 0, state.currentRun);
+  // Persist a derived moneySaved value so DB reflects cumulative savings
+  state.moneySaved = Math.round(state.totalCleanDays * (state.dailySpend || 0));
+  // Save so DB stays in sync (debounced in saveState())
+  try { saveState(); } catch (e) { /* best-effort */ }
 }
 
 // Chip selection: single-select by default, multi-select when parent has data-multi
