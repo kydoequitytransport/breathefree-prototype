@@ -784,34 +784,69 @@
   <p style="margin-top: 8px;">Every craving you log here builds a map of your real triggers — not guesses.</p>
 
   <div class="section-title">Your trigger map</div>
-  <div class="card">
-    <div class="trigger-bar">
-      <div class="trigger-label">After meals</div>
-      <div class="trigger-track"><div class="trigger-fill" style="width: 75%;"></div></div>
-      <div class="trigger-count">9</div>
-    </div>
-    <div class="trigger-bar">
-      <div class="trigger-label">10PM</div>
-      <div class="trigger-track"><div class="trigger-fill" style="width: 60%;"></div></div>
-      <div class="trigger-count">7</div>
-    </div>
-    <div class="trigger-bar">
-      <div class="trigger-label">Stress</div>
-      <div class="trigger-track"><div class="trigger-fill" style="width: 33%;"></div></div>
-      <div class="trigger-count">4</div>
-    </div>
-    <div class="trigger-bar">
-      <div class="trigger-label">Work break</div>
-      <div class="trigger-track"><div class="trigger-fill" style="width: 25%;"></div></div>
-      <div class="trigger-count">3</div>
-    </div>
-    <div class="trigger-bar">
-      <div class="trigger-label">Social</div>
-      <div class="trigger-track"><div class="trigger-fill" style="width: 16%;"></div></div>
-      <div class="trigger-count">2</div>
-    </div>
-    <div class="muted" style="margin-top: 14px;">Your #1 trigger is <strong style="color: var(--brown);">after meals</strong>. Your ritual is tuned for it.</div>
-  </div>
+  <div class="card" id="trigger-map"></div>
+
+<script>
+// ============ TRIGGER MAP DYNAMIC RENDER ==========
+function computeTriggerCounts() {
+  // Only count slips with a trigger
+  const counts = {};
+  if (Array.isArray(event_log)) {
+    for (const ev of event_log) {
+      if (ev.event === 'Slip Logged' && ev.trigger) {
+        counts[ev.trigger] = (counts[ev.trigger] || 0) + 1;
+      }
+    }
+  }
+  return counts;
+}
+
+function renderTriggerMap() {
+  const triggerLabels = {
+    meal: 'After meals',
+    '10pm': '10PM',
+    stress: 'Stress',
+    break: 'Work break',
+    social: 'Social',
+    bored: 'Bored',
+    morning: 'Morning',
+    anxious: 'Anxious',
+    other: 'Other',
+  };
+  const preferredOrder = ['meal', '10pm', 'stress', 'break', 'social', 'bored', 'morning', 'anxious', 'other'];
+  const counts = computeTriggerCounts();
+  const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+  let maxKey = null;
+  let maxVal = 0;
+  for (const k in counts) if (counts[k] > maxVal) { maxVal = counts[k]; maxKey = k; }
+
+  let html = '';
+  let hasSlip = Object.values(counts).some(v => v > 0);
+  for (const key of preferredOrder) {
+    const label = triggerLabels[key];
+    const count = counts[key] || 0;
+    if (!label) continue;
+    // Always show all triggers, even if count is 0
+    const percent = hasSlip && maxVal > 0 ? Math.round((count / maxVal) * 100) : 0;
+    html += `<div class="trigger-bar">
+      <div class="trigger-label">${label}</div>
+      <div class="trigger-track"><div class="trigger-fill" style="width: ${percent}%;"></div></div>
+      <div class="trigger-count">${count}</div>
+    </div>`;
+  }
+  if (hasSlip && maxKey) {
+    html += `<div class="muted" style="margin-top: 14px;">Your #1 trigger is <strong style="color: var(--brown);">${triggerLabels[maxKey] || ''}</strong>. Your ritual is tuned for it.</div>`;
+  } else {
+    html += `<div class="muted" style="margin-top: 14px;">Log a slip to see your top trigger.</div>`;
+  }
+  document.getElementById('trigger-map').innerHTML = html;
+}
+
+// Call this after event_log changes or on home render
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.getElementById('trigger-map')) renderTriggerMap();
+});
+</script>
 
   <div class="section-title">Your rituals</div>
   <div class="card">
@@ -854,6 +889,45 @@
   <div class="section-title">Risky-day plans</div>
   <div id="risky-list"></div>
   <button class="btn btn-soft" style="margin-top: 6px;" onclick="openRisky()">+ Plan a risky day</button>
+
+<script>
+function renderRiskyPlans() {
+  const list = document.getElementById('risky-list');
+  if (!state || !Array.isArray(state.riskyDayPlans) || state.riskyDayPlans.length === 0) {
+    list.innerHTML = '<div class="card card-warm">No plans yet. Pre-planning beats improvising every time.</div>';
+    return;
+  }
+  list.innerHTML = state.riskyDayPlans.map((plan, i) => `
+    <div class="card card-warm" style="margin-bottom: 10px;">
+      <div style="font-size: 15px; color: var(--brown); font-weight: 600;">${plan.event || 'Unnamed event'}</div>
+      <div class="muted" style="margin-bottom: 6px;">${plan.date ? new Date(plan.date).toLocaleDateString() : ''}</div>
+      <div style="font-size: 14px; color: var(--brown-soft); white-space: pre-line;">${plan.plan || ''}</div>
+    </div>
+  `).join('');
+}
+
+// Patch saveRiskyDay to update state and re-render
+const origSaveRiskyDay = window.saveRiskyDay;
+window.saveRiskyDay = function() {
+  const event = document.getElementById('risky-event').value.trim();
+  const date = document.getElementById('risky-date').value;
+  const plan = document.getElementById('risky-plan').value.trim();
+  if (!event && !plan) {
+    alert('Please enter an event and plan.');
+    return;
+  }
+  state.riskyDayPlans = state.riskyDayPlans || [];
+  state.riskyDayPlans.push({ event, date, plan });
+  saveState();
+  closeModal('risky-modal');
+  renderRiskyPlans();
+};
+
+// Render on load and after hydration
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.getElementById('risky-list')) renderRiskyPlans();
+});
+</script>
 </div>
 
 <!-- ============ KIT VIEW (Product catalogue) ============ -->
@@ -1404,6 +1478,8 @@ async function hydrateState() {
     supaReady = false;
     runMigrationBlock();
   }
+  // Always re-render trigger map after hydration if present
+  if (document.getElementById('trigger-map')) renderTriggerMap();
 }
 
 // Debounced Supabase write
@@ -2128,9 +2204,13 @@ function slipBounceBack() {
   state.slipCount = (state.slipCount || 0) + 1;
   state.runStartDate = new Date().toISOString();
   recomputeRunState();
+  // Explicitly push to event_log for full reliability BEFORE saveState
+  event_log = event_log || [];
+  event_log.push({ event: 'Slip Logged', trigger: slipTrigger, run_length_at_slip: runAtSlip, timestamp: new Date().toISOString() });
   saveState();
-  track('Slip Logged', { trigger: slipTrigger, run_length_at_slip: runAtSlip });
   closeModal('slip-modal');
+  // Always re-render trigger map after slip
+  if (document.getElementById('trigger-map')) renderTriggerMap();
   renderHome();
   // Warm interrupt — Abstinence Violation Interrupt
   setTimeout(() => {
