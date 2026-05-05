@@ -876,14 +876,18 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 
   <div class="section-title">If / then plan</div>
-  <div class="card card-warm">
-    <p id="ifthen-text" style="font-size: 15px; color: var(--brown); line-height: 1.6;">
-      <strong>If</strong> a craving hits after dinner, <br>
-      <strong>then</strong> I tap my BreatheFree necklace for 6 slow breaths. <br>
-      <strong>If</strong> that doesn't work in 2 minutes, <br>
-      <strong>then</strong> I load a flavor refill and step outside.
-    </p>
-    <button class="link" style="margin-top: 12px;" onclick="editIfThen()">Edit my plan →</button>
+  <div class="card card-warm" id="ifthen-card">
+    <div id="ifthen-view">
+      <p id="ifthen-text" style="font-size: 15px; color: var(--brown); line-height: 1.6;"></p>
+      <button class="link" style="margin-top: 12px;" onclick="showIfThenEdit()">Edit my plan →</button>
+    </div>
+    <div id="ifthen-edit" style="display:none;">
+      <textarea id="ifthen-input" rows="4" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #ccc;font-size:15px;"></textarea>
+      <div style="display:flex;gap:10px;margin-top:10px;">
+        <button class="btn btn-soft btn-sm" onclick="saveIfThen()">Save</button>
+        <button class="btn btn-outline btn-sm" onclick="cancelIfThenEdit()">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <div class="section-title">Risky-day plans</div>
@@ -902,6 +906,30 @@ function renderRiskyPlans() {
       <div style="font-size: 15px; color: var(--brown); font-weight: 600;">${plan.event || 'Unnamed event'}</div>
       <div class="muted" style="margin-bottom: 6px;">${plan.date ? new Date(plan.date).toLocaleDateString() : ''}</div>
       <div style="font-size: 14px; color: var(--brown-soft); white-space: pre-line;">${plan.plan || ''}</div>
+      <div style="position:absolute;top:12px;right:12px;display:flex;gap:8px;">
+        <button class="link" style="font-size:12px;\" onclick="editRiskyDay(${i})">Edit</button>
+        <button class="link" style="font-size:12px;color:var(--coral);\" onclick="deleteRisky(${i})">Remove</button>
+      </div>
+    </div>
+    <div id="risky-edit-${i}" style="display:none;margin-bottom:10px;">
+      <div class="card card-warm">
+        <div class="field">
+          <label>What's the event?</label>
+          <input type="text" id="risky-edit-event-${i}" value="${plan.event || ''}">
+        </div>
+        <div class="field">
+          <label>When?</label>
+          <input type="date" id="risky-edit-date-${i}" value="${plan.date || ''}">
+        </div>
+        <div class="field">
+          <label>What's your plan?</label>
+          <textarea id="risky-edit-plan-${i}" rows="3">${plan.plan || ''}</textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-soft btn-sm" onclick="saveRiskyEdit(${i})">Save</button>
+          <button class="btn btn-outline btn-sm" onclick="cancelRiskyEdit(${i})">Cancel</button>
+        </div>
+      </div>
     </div>
   `).join('');
 }
@@ -1893,33 +1921,154 @@ function renderRituals() {
     primary.querySelector('.ritual-icon').textContent = ritual.icon;
     primary.querySelector('.ritual-name').textContent = ritual.name;
   }
-  if (state.ifThenPlan) {
-    document.getElementById('ifthen-text').textContent = state.ifThenPlan;
+  renderIfThen();
+  renderRiskyPlans();
+}
+// Patch renderRituals to use new renderers
+renderRituals = function() {
+  if (!state) return;
+  const ritual = RITUAL_DATA[state.ritual];
+  const primary = document.querySelector('#rituals .ritual.selected');
+  if (primary && ritual) {
+    primary.querySelector('.ritual-icon').textContent = ritual.icon;
+    primary.querySelector('.ritual-name').textContent = ritual.name;
   }
-  // Render risky-day plans list
-  const list = document.getElementById('risky-list');
-  const plans = state.riskyDayPlans || [];
-  if (plans.length === 0) {
-    list.innerHTML = `<div class="card card-warm"><p style="font-size: 14px;">No plans yet. Pre-planning beats improvising every time.</p></div>`;
-  } else {
-    list.innerHTML = plans.map((p, i) => {
-      const when = new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      return `<div class="card" style="position: relative;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-          <div style="flex: 1;">
-            <div style="font-size: 12px; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">${when}</div>
-            <div style="font-size: 15px; font-weight: 600; margin-top: 2px;">${escapeHtml(p.event)}</div>
-            <p style="font-size: 14px; margin-top: 8px;">${escapeHtml(p.plan)}</p>
-          </div>
-          <button class="link" style="font-size: 12px;" onclick="deleteRisky(${i})">Remove</button>
-        </div>
-      </div>`;
-    }).join('');
+  renderIfThen();
+  renderRiskyPlans();
+};
+
+// ============ IF/THEN PLAN INLINE EDIT ============
+function showIfThenEdit() {
+  document.getElementById('ifthen-view').style.display = 'none';
+  document.getElementById('ifthen-edit').style.display = 'block';
+  document.getElementById('ifthen-input').value = state.ifThenPlan || '';
+}
+function cancelIfThenEdit() {
+  document.getElementById('ifthen-edit').style.display = 'none';
+  document.getElementById('ifthen-view').style.display = 'block';
+}
+function saveIfThen() {
+  const val = document.getElementById('ifthen-input').value.trim();
+  if (!val) {
+    showInlineError('Please enter your plan.', 'ifthen-edit');
+    return;
   }
+  state.ifThenPlan = val;
+  saveState();
+  document.getElementById('ifthen-edit').style.display = 'none';
+  document.getElementById('ifthen-view').style.display = 'block';
+  renderIfThen();
+  toast('Plan updated.');
+}
+function renderIfThen() {
+  const txt = state.ifThenPlan || 'If a craving hits after dinner,\nthen I tap my BreatheFree necklace for 6 slow breaths.\nIf that doesn\'t work in 2 minutes,\nthen I load a flavor refill and step outside.';
+  document.getElementById('ifthen-text').innerText = txt;
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// ============ RISKY-DAY PLANS INLINE EDIT ============
+function showRiskyAdd() {
+  document.getElementById('risky-add').style.display = 'none';
+  document.getElementById('risky-form').style.display = 'block';
+}
+function cancelRiskyAdd() {
+  document.getElementById('risky-form').style.display = 'none';
+  document.getElementById('risky-add').style.display = 'block';
+}
+function saveRiskyDayInline() {
+  const event = document.getElementById('risky-event').value.trim();
+  const date = document.getElementById('risky-date').value;
+  const plan = document.getElementById('risky-plan').value.trim();
+  if (!event || !date || !plan) {
+    showInlineError('Please fill out all fields.', 'risky-form');
+    return;
+  }
+  state.riskyDayPlans = state.riskyDayPlans || [];
+  state.riskyDayPlans.push({ event, date, plan, createdAt: new Date().toISOString() });
+  saveState();
+  document.getElementById('risky-form').style.display = 'none';
+  document.getElementById('risky-add').style.display = 'block';
+  renderRiskyPlans();
+  toast('Plan saved. You\'re ready.');
+}
+function editRiskyDay(idx) {
+  document.getElementById(`risky-edit-${idx}`).style.display = 'block';
+}
+function cancelRiskyEdit(idx) {
+  document.getElementById(`risky-edit-${idx}`).style.display = 'none';
+}
+function saveRiskyEdit(idx) {
+  const event = document.getElementById(`risky-edit-event-${idx}`).value.trim();
+  const date = document.getElementById(`risky-edit-date-${idx}`).value;
+  const plan = document.getElementById(`risky-edit-plan-${idx}`).value.trim();
+  if (!event || !date || !plan) {
+    showInlineError('Please fill out all fields.', `risky-edit-${idx}`);
+    return;
+  }
+  state.riskyDayPlans[idx] = { ...state.riskyDayPlans[idx], event, date, plan };
+  saveState();
+  document.getElementById(`risky-edit-${idx}`).style.display = 'none';
+  renderRiskyPlans();
+  toast('Plan updated.');
+}
+function deleteRisky(idx) {
+  state.riskyDayPlans.splice(idx, 1);
+  saveState();
+  renderRiskyPlans();
+  toast('Plan removed.');
+}
+// Show inline error message in a container
+function showInlineError(msg, containerId) {
+  let c = document.getElementById(containerId);
+  if (!c) return;
+  let err = c.querySelector('.inline-error');
+  if (!err) {
+    err = document.createElement('div');
+    err.className = 'inline-error';
+    err.style = 'color:var(--coral);font-size:13px;margin-bottom:8px;';
+    c.insertBefore(err, c.firstChild);
+  }
+  err.textContent = msg;
+  setTimeout(() => { if (err) err.textContent = ''; }, 2500);
+}
+// Patch renderRiskyPlans to support inline edit
+function renderRiskyPlans() {
+  const list = document.getElementById('risky-list');
+  if (!state || !Array.isArray(state.riskyDayPlans) || state.riskyDayPlans.length === 0) {
+    list.innerHTML = '<div class="card card-warm">No plans yet. Pre-planning beats improvising every time.</div>';
+    return;
+  }
+  list.innerHTML = state.riskyDayPlans.map((plan, i) => {
+    const when = new Date(plan.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `<div class="card card-warm" style="position: relative;">
+      <div style="font-size: 15px; color: var(--brown); font-weight: 600;">${plan.event || 'Unnamed event'}</div>
+      <div class="muted" style="margin-bottom: 6px;">${plan.date ? new Date(plan.date).toLocaleDateString() : ''}</div>
+      <div style="font-size: 14px; color: var(--brown-soft); white-space: pre-line;">${plan.plan || ''}</div>
+      <div style="position:absolute;top:12px;right:12px;display:flex;gap:8px;">
+        <button class="link" style="font-size:12px;" onclick="editRiskyDay(${i})">Edit</button>
+        <button class="link" style="font-size:12px;color:var(--coral);" onclick="deleteRisky(${i})">Remove</button>
+      </div>
+    </div>
+    <div id="risky-edit-${i}" style="display:none;margin-bottom:10px;">
+      <div class="card card-warm">
+        <div class="field">
+          <label>What's the event?</label>
+          <input type="text" id="risky-edit-event-${i}" value="${plan.event || ''}">
+        </div>
+        <div class="field">
+          <label>When?</label>
+          <input type="date" id="risky-edit-date-${i}" value="${plan.date || ''}">
+        </div>
+        <div class="field">
+          <label>What's your plan?</label>
+          <textarea id="risky-edit-plan-${i}" rows="3">${plan.plan || ''}</textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-soft btn-sm" onclick="saveRiskyEdit(${i})">Save</button>
+          <button class="btn btn-outline btn-sm" onclick="cancelRiskyEdit(${i})">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ============ HOME RENDER ============
@@ -2380,19 +2529,37 @@ function deleteRisky(idx) {
   state.riskyDayPlans.splice(idx, 1);
   saveState();
   renderRituals();
+  toast('Plan removed.');
 }
+// Show inline error message in a container
+function showInlineError(msg, containerId) {
+  let c = document.getElementById(containerId);
+  if (!c) return;
+  let err = c.querySelector('.inline-error');
+  if (!err) {
+    err = document.createElement('div');
+    err.className = 'inline-error';
+    err.style = 'color:var(--coral);font-size:13px;margin-bottom:8px;';
+    c.insertBefore(err, c.firstChild);
+  }
+  err.textContent = msg;
+  setTimeout(() => { if (err) err.textContent = ''; }, 2500);
+}
+// Patch renderRituals to use new renderers
+renderRituals = function() {
+  if (!state) return;
+  const ritual = RITUAL_DATA[state.ritual];
+  const primary = document.querySelector('#rituals .ritual.selected');
+  if (primary && ritual) {
+    primary.querySelector('.ritual-icon').textContent = ritual.icon;
+    primary.querySelector('.ritual-name').textContent = ritual.name;
+  }
+  renderIfThen();
+  renderRiskyPlans();
+};
 
 // ============ IF/THEN EDITOR ============
-function editIfThen() {
-  const current = state.ifThenPlan || document.getElementById('ifthen-text').innerText;
-  const next = prompt('Edit your if / then plan. Use "If X then Y" structure:', current);
-  if (next && next.trim()) {
-    state.ifThenPlan = next.trim();
-    saveState();
-    renderRituals();
-    toast('Plan updated.');
-  }
-}
+// (Handled by showIfThenEdit, saveIfThen, cancelIfThenEdit, renderIfThen)
 
 // ============ EDIT WHY ============
 function editWhy() {
