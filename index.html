@@ -345,7 +345,7 @@
 <div class="app">
 
 <!-- ============ ONBOARDING ============ -->
-<div class="view active" id="onboarding">
+<div class="view" id="onboarding">
 
   <!-- Step 0: Welcome -->
   <div class="onb-step active" data-step="0">
@@ -1789,6 +1789,12 @@ function showView(name) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === name));
   document.getElementById('nav').style.display = name === 'onboarding' ? 'none' : 'flex';
   window.scrollTo(0, 0);
+  // Ensure onboarding shows first step when displayed
+  if (name === 'onboarding') {
+    document.querySelectorAll('.onb-step').forEach(s => s.classList.remove('active'));
+    const firstStep = document.querySelector('.onb-step[data-step="0"]') || document.querySelector('.onb-step');
+    if (firstStep) firstStep.classList.add('active');
+  }
 
   if (name === 'home') renderHome();
   if (name === 'milestones') renderMilestones();
@@ -1797,6 +1803,7 @@ function showView(name) {
   if (name === 'rituals') renderRituals();
   if (name === 'kit') renderKit();
 }
+
 
 // ============ KIT (product catalogue) ============
 const PRODUCTS = [
