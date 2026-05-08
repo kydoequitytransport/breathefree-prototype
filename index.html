@@ -1625,6 +1625,8 @@ if (state) {
   if (!state.checkinsLogged) state.checkinsLogged = [];
   if (!state.waves) state.waves = [];
   if (state.hasRefills === undefined) state.hasRefills = (state.ritual === 'refills');
+  // Ensure we have a persisted lifetime counter separate from the running streak
+  if (state.lifetimeCleanDays === undefined) state.lifetimeCleanDays = (state.totalCleanDays || 0);
 }
 let onbStep = 0;
 let onbData = {};
@@ -1690,6 +1692,7 @@ function onbFinish() {
     riskyDayPlans: [],
     customRituals: [],
     waves: [],
+    lifetimeCleanDays: 0,
     startedAt: new Date().toISOString(),
   };
   recomputeRunState();
@@ -1751,8 +1754,9 @@ function daysSinceRunStart() {
 function recomputeRunState() {
   if (!state) return;
   state.currentRun = daysSinceRunStart();
-  // Total clean days should be based on the run start datetime, resetting on slip.
-  state.totalCleanDays = Math.max(0, daysSinceRunStart() - (state.slipCount || 0));
+  // Total clean days = persistent lifetimeCleanDays + current run length
+  state.lifetimeCleanDays = state.lifetimeCleanDays || 0;
+  state.totalCleanDays = Math.max(0, state.lifetimeCleanDays + state.currentRun);
   state.bestRun = Math.max(state.bestRun || 0, state.currentRun);
   // Persist a derived moneySaved value so DB reflects cumulative savings
   state.moneySaved = Math.round(state.totalCleanDays * (state.dailySpend || 0));
@@ -2363,6 +2367,8 @@ function slipBounceBack() {
   const runAtSlip = state.currentRun;
   state.bestRun = Math.max(state.bestRun, state.currentRun);
   state.slipCount = (state.slipCount || 0) + 1;
+  // Add the completed run to lifetimeCleanDays before resetting
+  state.lifetimeCleanDays = (state.lifetimeCleanDays || 0) + (runAtSlip || 0);
   state.runStartDate = new Date().toISOString();
   recomputeRunState();
   // Explicitly push to event_log for full reliability BEFORE saveState
