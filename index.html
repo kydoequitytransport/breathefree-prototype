@@ -1298,6 +1298,10 @@
     <div style="background: white; border-radius: var(--radius-card); padding: 16px; margin-bottom: 14px;">
       <h3>What happened?</h3>
       <p style="font-size: 13px; color: var(--mid-brown); margin-top: 4px;">Knowing the trigger turns the slip into a better plan.</p>
+      <div style="margin-top:12px;">
+        <label style="display:block;font-size:13px;color:var(--mid-brown);margin-bottom:6px;">When did this happen?</label>
+        <input id="slip-date" type="date" style="width:100%;padding:8px;border-radius:8px;border:1px solid #eee;background:#fafafa;" />
+      </div>
       <div class="chips" style="margin-top: 14px;" id="slip-triggers">
         <button type="button" class="chip" data-value="stress">Stress</button>
         <button type="button" class="chip" data-value="social">Social pressure</button>
@@ -1555,6 +1559,8 @@ let state = null;
 let event_log = null;
 let supaReady = false;
 let supaWriteQueue = [];
+// true while we are fetching and applying server state on startup / sign-in.
+let initialHydration = true;
 
 function runMigrationBlock() {
   if (!state) return;
@@ -1576,6 +1582,7 @@ function runMigrationBlock() {
 }
 
 async function hydrateState() {
+  initialHydration = true;
   const session = (await sb.auth.getSession()).data.session;
   if (session && session.user) {
     user_id = session.user.id;
@@ -1588,6 +1595,8 @@ async function hydrateState() {
       runMigrationBlock();
       localStorage.setItem('bf_state', JSON.stringify(state));
       localStorage.setItem('bf_event_log', JSON.stringify(event_log));
+      // Server has authoritative state: drop any pending local write queue
+      supaWriteQueue = [];
     } else {
       state = JSON.parse(localStorage.getItem('bf_state') || '{}');
       event_log = JSON.parse(localStorage.getItem('bf_event_log') || '[]');
@@ -1601,11 +1610,17 @@ async function hydrateState() {
     supaReady = false;
     runMigrationBlock();
   }
+  // hydration finished — allow Supabase writes to proceed normally
+  initialHydration = false;
 }
 
 let supaWriteTimer = null;
 function queueSupabaseWrite() {
   if (!user_id || !supaReady) return;
+  // Don't allow local state to overwrite server state while we're still
+  // performing the initial hydration (server fetch + apply). This prevents
+  // stale localStorage from clobbering authoritative Supabase data.
+  if (initialHydration) return;
   if (supaWriteTimer) clearTimeout(supaWriteTimer);
   supaWriteTimer = setTimeout(async () => {
     try { await sb.from('user_data').upsert({ user_id, state, event_log }); }
@@ -1615,8 +1630,14 @@ function queueSupabaseWrite() {
 
 function saveState() {
   if (state && state.unlockedMilestones) state.unlockedMilestones = Array.from(new Set(state.unlockedMilestones));
-  localStorage.setItem('bf_state', JSON.stringify(state));
-  localStorage.setItem('bf_event_log', JSON.stringify(event_log));
+  // If user is signed in and Supabase is ready, prefer server as source-of-truth.
+  // Do NOT overwrite localStorage with client state for signed-in users to avoid
+  // clobbering authoritative server data. Keep localStorage only for
+  // anonymous/offline usage.
+  if (!user_id || !supaReady) {
+    localStorage.setItem('bf_state', JSON.stringify(state));
+    localStorage.setItem('bf_event_log', JSON.stringify(event_log));
+  }
   queueSupabaseWrite();
 }
 
@@ -1727,10 +1748,24 @@ function escapeHtml(s) {
 }
 
 // ============ TIME HELPERS ============
+function parseStartMs(dateStr) {
+  if (!dateStr) return null;
+  // If it's a date-only string YYYY-MM-DD, interpret as UTC midnight
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (m) {
+    const y = Number(m[1]), mo = Number(m[2]) - 1, d = Number(m[3]);
+    return Date.UTC(y, mo, d);
+  }
+  // Otherwise parse as a full timestamp and use that exact instant
+  const parsed = new Date(dateStr);
+  if (!isNaN(parsed.getTime())) return parsed.getTime();
+  return null;
+}
 function hoursSinceRunStart() {
   if (!state) return 0;
-  const start = new Date(state.runStartDate || state.quitDate).getTime();
-  return Math.max(0, (Date.now() - start) / 3600000);
+  const startSource = state.runStartDate || state.quitDate || state.startedAt;
+  const startMs = parseStartMs(startSource) || Date.now();
+  return Math.max(0, (Date.now() - startMs) / 3600000);
 }
 function daysSinceRunStart() { return Math.floor(hoursSinceRunStart() / 24); }
 function recomputeRunState() {
@@ -1950,7 +1985,10 @@ function renderWeekStrip() {
   const monday = new Date(today);
   monday.setDate(today.getDate() + mondayOffset);
 
-  const quitDate = new Date(state.runStartDate || state.quitDate);
+  // For display purposes we want to show any day since the original quit date
+  // as "clean" unless it was explicitly logged as a slip. The current run
+  // start (`state.runStartDate`) is used for milestone math only.
+  const baselineQuitDate = new Date(state.quitDate || state.runStartDate);
   const slips = (state.slipsLog || []).map(s => new Date(s));
 
   for (let i = 0; i < 7; i++) {
@@ -1959,7 +1997,7 @@ function renderWeekStrip() {
     const isToday = sameDay(d, today);
     const isFuture = d > today;
     const isSlip = slips.some(s => sameDay(s, d));
-    const isClean = !isFuture && !isSlip && d >= quitDate;
+    const isClean = !isFuture && !isSlip && d >= baselineQuitDate;
 
     const cell = document.createElement('div');
     const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
@@ -2000,7 +2038,10 @@ function renderCalendar() {
   });
 
   const today = new Date();
-  const quitDate = new Date(state.runStartDate || state.quitDate);
+  // Use the original quit date for marking historical clean days so previous
+  // clean days remain visible. `state.runStartDate` continues to drive the
+  // milestone / current-run calculations.
+  const baselineQuitDate = new Date(state.quitDate || state.runStartDate);
   const slips = (state.slipsLog || []).map(s => new Date(s));
   const firstDow = (new Date(calYear, calMonth, 1).getDay() + 6) % 7; // Mon=0
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -2013,7 +2054,7 @@ function renderCalendar() {
     const isToday = sameDay(d, today);
     const isFuture = d > today;
     const isSlip = slips.some(s => sameDay(s, d));
-    const isClean = !isFuture && !isSlip && d >= quitDate;
+    const isClean = !isFuture && !isSlip && d >= baselineQuitDate;
 
     const cell = document.createElement('div');
     cell.className = 'calcell' + (isToday ? ' calcell--today' : isFuture ? ' calcell--future' : isSlip ? ' calcell--slip' : '');
@@ -2396,27 +2437,97 @@ function openSlip(fromCraving) {
   document.getElementById('slip-money').textContent = Math.round(state.totalCleanDays * (state.dailySpend || 0));
   const ft = document.getElementById('slip-free-term');
   if (ft) ft.textContent = freeTerm();
+  // Prepare date picker: allow picking between registration (startedAt or quitDate) and today
+  try {
+    const dateEl = document.getElementById('slip-date');
+    if (dateEl) {
+      const today = new Date();
+      const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const max = ymd(today);
+      const earliest = state && (state.startedAt || state.quitDate) ? new Date(state.startedAt || state.quitDate) : null;
+      dateEl.max = max;
+      dateEl.value = max;
+      if (earliest) dateEl.min = ymd(earliest);
+    }
+  } catch (e) {}
   openModal('slip-modal');
 }
 
 function slipBounceBack() {
   const slipTrigger = document.querySelector('#slip-triggers .chip.selected')?.dataset.value;
-  const runAtSlip = state.currentRun;
-  state.bestRun = Math.max(state.bestRun || 0, state.currentRun);
-  state.slipCount = (state.slipCount || 0) + 1;
-  state.lifetimeCleanDays = (state.lifetimeCleanDays || 0) + (runAtSlip || 0);
-  // Log slip date for calendar rendering
+  // Determine slip date (allow retroactive within allowed range)
+  let chosen = null;
+  try { chosen = document.getElementById('slip-date')?.value || null; } catch(e) { chosen = null; }
+  const todayStr = new Date().toISOString().split('T')[0];
+  const earliestAllowed = (state && (state.startedAt || state.quitDate)) ? (new Date(state.startedAt || state.quitDate).toISOString().split('T')[0]) : null;
+  if (!chosen) chosen = todayStr;
+  // Validation: not in future
+  if (chosen > todayStr) { alert('Cannot log a slip in the future.'); return; }
+  // Validation: not before registration/quit
+  if (earliestAllowed && chosen < earliestAllowed) { alert('Selected date is before your registration/quit date.'); return; }
+
+  // Compute number of full days in the run before the chosen slip date
+  const prevSource = state.runStartDate || state.quitDate || state.startedAt || new Date().toISOString();
+  const prevStartMs = parseStartMs(prevSource) || Date.now();
+  const prevStartDate = new Date(prevStartMs);
+  // compute UTC midnight for prev start
+  const prevStartMidMs = Date.UTC(prevStartDate.getUTCFullYear(), prevStartDate.getUTCMonth(), prevStartDate.getUTCDate());
+  const parsedChosen = parseStartMs(chosen);
+  const chosenMs = parsedChosen || (function(){ const t = new Date(chosen + 'T00:00:00'); return Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()); })();
+  const chosenDateObj = new Date(chosenMs);
+  const chosenMidMs = Date.UTC(chosenDateObj.getUTCFullYear(), chosenDateObj.getUTCMonth(), chosenDateObj.getUTCDate());
+  let runAtSlipDays = Math.floor((chosenMidMs - prevStartMidMs) / 86400000);
+  if (isNaN(runAtSlipDays) || runAtSlipDays < 0) runAtSlipDays = 0;
+
+  // Update best run and lifetime using the days earned before the slip
+  state.bestRun = Math.max(state.bestRun || 0, runAtSlipDays);
+  state.lifetimeCleanDays = (state.lifetimeCleanDays || 0) + runAtSlipDays;
+
+  // Log slip and update counters
   state.slipsLog = state.slipsLog || [];
-  state.slipsLog.push(new Date().toISOString().split('T')[0]);
-  state.runStartDate = new Date().toISOString();
+  if (!state.slipsLog.includes(chosen)) state.slipsLog.push(chosen);
+  state.slipCount = state.slipsLog.length || 0;
+
+  // Reset run start to the day AFTER the slipped date (store date-only YYYY-MM-DD)
+  const newRunStartMs = chosenMidMs + 86400000; // chosen midnight + 1 day (UTC)
+  const newRunStart = new Date(newRunStartMs);
+  const ymd = d => `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+  state.runStartDate = ymd(newRunStart);
   recomputeRunState();
   event_log = event_log || [];
-  event_log.push({ event: 'Slip Logged', trigger: slipTrigger, run_length_at_slip: runAtSlip, properties: { timestamp: new Date().toISOString(), trigger: slipTrigger } });
+  event_log.push({ event: 'Slip Logged', trigger: slipTrigger, run_length_at_slip: runAtSlipDays, properties: { timestamp: new Date().toISOString(), trigger: slipTrigger, slip_date: chosen } });
   saveState();
   closeModal('slip-modal');
   renderHome();
-  setTimeout(() => { alert('Plan locked in. Current run is back to 0 — everything else is still yours. Same ritual, same you.'); }, 400);
+  setTimeout(() => { alert('Plan locked in. Current run reset to the slip date — everything else is still yours.'); }, 400);
 }
+
+// Helper to remove a slip (for debugging / admin use). Pass a YYYY-MM-DD string.
+function undoSlip(dateStr) {
+  if (!state || !state.slipsLog) return;
+  const idx = state.slipsLog.indexOf(dateStr);
+  if (idx === -1) return;
+  if (!confirm(`Remove slip on ${dateStr}? This will restore prior clean-day markings.`)) return;
+  state.slipsLog.splice(idx, 1);
+  // If the removed slip influenced runStartDate (i.e., runStartDate is day after that slip),
+  // we attempt to find the latest slip and set runStartDate to day after it, else fallback to quitDate.
+  const remaining = (state.slipsLog || []).slice().sort();
+  if (remaining.length) {
+    const last = remaining[remaining.length - 1];
+    const tmp = new Date(last + 'T00:00:00');
+    const nextDayMs = Date.UTC(tmp.getUTCFullYear(), tmp.getUTCMonth(), tmp.getUTCDate()) + 86400000;
+    const nextDay = new Date(nextDayMs);
+    const ymd = dd => `${dd.getUTCFullYear()}-${String(dd.getUTCMonth()+1).padStart(2,'0')}-${String(dd.getUTCDate()).padStart(2,'0')}`;
+    state.runStartDate = ymd(nextDay);
+  } else {
+    state.runStartDate = state.quitDate || state.startedAt || new Date().toISOString();
+  }
+  recomputeRunState();
+  saveState();
+  renderHome();
+  toast(`Removed slip ${dateStr}`);
+}
+
 
 // ============ CHECK-IN ============
 function todayKey() { return new Date().toISOString().slice(0, 10); }
