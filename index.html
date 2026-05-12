@@ -1770,11 +1770,32 @@ function hoursSinceRunStart() {
 function daysSinceRunStart() { return Math.floor(hoursSinceRunStart() / 24); }
 function recomputeRunState() {
   if (!state) return;
-  state.currentRun = daysSinceRunStart();
-  state.lifetimeCleanDays = state.lifetimeCleanDays || 0;
-  state.totalCleanDays = Math.max(0, state.lifetimeCleanDays + state.currentRun);
-  state.bestRun = Math.max(state.bestRun || 0, state.currentRun);
+  // Find last slip date for streak, but count all clean days for cumulative
+  const today = new Date();
+  const quitDate = new Date(state.quitDate);
+  const slips = (state.slipsLog || []).map(s => new Date(s));
+
+  // Compute current streak (days since last slip)
+  let lastSlipDate = state.quitDate;
+  if (slips.length > 0) {
+    lastSlipDate = slips[slips.length - 1].toISOString().slice(0,10);
+  }
+  const lastSlip = new Date(lastSlipDate);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const currentRun = Math.floor((today - lastSlip) / msPerDay);
+  state.currentRun = currentRun;
+
+  // Compute cumulative clean days (all days since quit date, minus slips)
+  let totalCleanDays = 0;
+  for (let d = new Date(quitDate); d <= today; d.setDate(d.getDate() + 1)) {
+    // Check if this day is a slip
+    const isSlip = slips.some(slip => slip.getFullYear() === d.getFullYear() && slip.getMonth() === d.getMonth() && slip.getDate() === d.getDate());
+    if (!isSlip) totalCleanDays++;
+  }
+  state.totalCleanDays = totalCleanDays;
   state.moneySaved = Math.round(state.totalCleanDays * (state.dailySpend || 0));
+  // bestRun logic: keep highest ever clean streak
+  state.bestRun = Math.max(state.bestRun || 0, state.currentRun);
   try { saveState(); } catch (e) {}
 }
 function stageFromDays(d) {
