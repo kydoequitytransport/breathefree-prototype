@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { isSupabaseConfigured, supabase } from './supabase'
 import type { AppState, EventLogEntry } from '@/types'
 
 const LOCAL_STATE_KEY = 'bf_state'
@@ -40,6 +40,9 @@ export function clearLocalStorage(): void {
 }
 
 export async function fetchUserData(userId: string) {
+  if (!isSupabaseConfigured) {
+    return { data: null, error: { message: 'Supabase is not configured.' } }
+  }
   return supabase
     .from('user_data')
     .select('state, event_log')
@@ -52,31 +55,52 @@ export async function upsertUserData(
   state: AppState,
   eventLog: EventLogEntry[]
 ) {
+  if (!isSupabaseConfigured) {
+    return { data: null, error: { message: 'Supabase is not configured.' } }
+  }
   return supabase
     .from('user_data')
     .upsert({ user_id: userId, state, event_log: eventLog })
 }
 
 export async function getCurrentSession() {
+  if (!isSupabaseConfigured) {
+    return { data: { session: null }, error: null }
+  }
   return supabase.auth.getSession()
 }
 
 export async function signUp(email: string, password: string) {
+  if (!isSupabaseConfigured) {
+    return { data: null, error: { message: 'Supabase is not configured.' } }
+  }
   return supabase.auth.signUp({ email, password })
 }
 
 export async function signIn(email: string, password: string) {
+  if (!isSupabaseConfigured) {
+    return { data: null, error: { message: 'Supabase is not configured.' } }
+  }
   return supabase.auth.signInWithPassword({ email, password })
 }
 
 export async function signOut() {
+  if (!isSupabaseConfigured) {
+    return { error: null }
+  }
   return supabase.auth.signOut()
 }
 
 export async function resetPasswordForEmail(email: string, redirectTo: string) {
+  if (!isSupabaseConfigured) {
+    return { data: null, error: { message: 'Supabase is not configured.' } }
+  }
   return supabase.auth.resetPasswordForEmail(email, { redirectTo })
 }
 
 export async function updateUserPassword(password: string) {
+  if (!isSupabaseConfigured) {
+    return { data: null, error: { message: 'Supabase is not configured.' } }
+  }
   return supabase.auth.updateUser({ password })
 }
