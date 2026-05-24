@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, supabase } from './supabase'
+import { supabase } from './supabase'
 import type { AppState, EventLogEntry } from '@/types'
 
 const LOCAL_STATE_KEY = 'bf_state'
@@ -40,9 +40,6 @@ export function clearLocalStorage(): void {
 }
 
 export async function fetchUserData(userId: string) {
-  if (!isSupabaseConfigured) {
-    return { data: null, error: { message: 'Supabase is not configured.' } }
-  }
   return supabase
     .from('user_data')
     .select('state, event_log')
@@ -55,52 +52,61 @@ export async function upsertUserData(
   state: AppState,
   eventLog: EventLogEntry[]
 ) {
-  if (!isSupabaseConfigured) {
-    return { data: null, error: { message: 'Supabase is not configured.' } }
-  }
   return supabase
     .from('user_data')
     .upsert({ user_id: userId, state, event_log: eventLog })
 }
 
 export async function getCurrentSession() {
-  if (!isSupabaseConfigured) {
-    return { data: { session: null }, error: null }
-  }
   return supabase.auth.getSession()
 }
 
-export async function signUp(email: string, password: string) {
-  if (!isSupabaseConfigured) {
-    return { data: null, error: { message: 'Supabase is not configured.' } }
+export async function updateLastAppOpen(userId: string) {
+  // Upsert into a lightweight `profiles` table that references auth.users.
+  // This avoids needing service_role key to update the auth.users table directly.
+  // Make sure the DB has a `profiles` table (see migrations/) with a policy
+  // allowing authenticated users to update their own row.
+  try {
+    return await supabase
+      .from('profiles')
+      .upsert({ id: userId, last_app_open_at: new Date().toISOString() })
+  } catch (e) {
+    console.error('updateLastAppOpen failed', e)
+    return { error: e }
   }
+}
+
+export async function touchUserUpdated(userId: string) {
+  // Lightweight update to touch the updated_at on the user_data row.
+  // This assumes a `user_data` table exists with a `user_id` PK and an
+  // `updated_at` timestamptz column. Run in authenticated context.
+  try {
+    return await supabase
+      .from('user_data')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+  } catch (e) {
+    console.error('touchUserUpdated failed', e)
+    return { error: e }
+  }
+}
+
+export async function signUp(email: string, password: string) {
   return supabase.auth.signUp({ email, password })
 }
 
 export async function signIn(email: string, password: string) {
-  if (!isSupabaseConfigured) {
-    return { data: null, error: { message: 'Supabase is not configured.' } }
-  }
   return supabase.auth.signInWithPassword({ email, password })
 }
 
 export async function signOut() {
-  if (!isSupabaseConfigured) {
-    return { error: null }
-  }
   return supabase.auth.signOut()
 }
 
 export async function resetPasswordForEmail(email: string, redirectTo: string) {
-  if (!isSupabaseConfigured) {
-    return { data: null, error: { message: 'Supabase is not configured.' } }
-  }
   return supabase.auth.resetPasswordForEmail(email, { redirectTo })
 }
 
 export async function updateUserPassword(password: string) {
-  if (!isSupabaseConfigured) {
-    return { data: null, error: { message: 'Supabase is not configured.' } }
-  }
   return supabase.auth.updateUser({ password })
 }

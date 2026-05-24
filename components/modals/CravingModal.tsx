@@ -21,9 +21,10 @@ interface CravingModalProps {
   onClose: () => void
   onBeat: () => void
   onSlip: () => void
+  onStartBreathing?: () => void
 }
 
-export function CravingModal({ isOpen, onClose, onBeat, onSlip }: CravingModalProps) {
+export function CravingModal({ isOpen, onClose, onBeat, onSlip, onStartBreathing }: CravingModalProps) {
   const { state, saveState, track } = useApp()
   const [step, setStep] = useState<1 | 2>(1)
   const [selectedTrigger, setSelectedTrigger] = useState('')
@@ -120,9 +121,24 @@ export function CravingModal({ isOpen, onClose, onBeat, onSlip }: CravingModalPr
               </div>
             </div>
             <div className="modal-actions">
-              <button className="btn btn--dark" onClick={handleBeat}>
-                ✓ Beat it
+              <button
+                className="btn btn--dark"
+                onClick={() => {
+                  onClose()
+                  if (onStartBreathing) onStartBreathing()
+                }}
+              >
+                Start guided breathing →
               </button>
+
+              <button
+                className="btn--white-outline"
+                style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+                onClick={handleBeat}
+              >
+                I rode it out 💪
+              </button>
+
               <button className="btn--ghost" style={{ color: 'var(--coral)' }} onClick={() => { handleClose(); onSlip() }}>
                 I slipped
               </button>

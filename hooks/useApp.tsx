@@ -17,6 +17,8 @@ import {
   setLocalEventLog,
   fetchUserData,
   upsertUserData,
+  updateLastAppOpen,
+  touchUserUpdated,
   getCurrentSession,
 } from '@/lib/userDataService'
 import { recomputeRunState, runMigrations } from '@/lib/stateUtils'
@@ -150,6 +152,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     hydrateState()
   }, [hydrateState])
+
+  // Update last_app_open_at when the app becomes active in the browser.
+  useEffect(() => {
+    if (!userId) return
+    // Simpler approach: touch the existing `user_data.updated_at` timestamp
+    // on every app open/focus. This avoids adding new columns and is easy to
+    // query for activity. It requires the `user_data` table to have an
+    // `updated_at` column (most Supabase setups include it).
+    touchUserUpdated(userId).catch(() => {})
+
+    const onFocus = () => {
+      touchUserUpdated(userId).catch(() => {})
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') touchUserUpdated(userId).catch(() => {})
+    }
+
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [userId])
 
   return (
     <AppContext.Provider

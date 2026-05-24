@@ -390,27 +390,26 @@ html, body {
 .modal h2 { font-size: 22px; font-weight: 800; color: var(--brown-text); }
 .modal p { font-size: 15px; color: var(--mid-brown); margin-top: 8px; line-height: 1.6; }
 .modal-section-title { font-size: 13px; font-weight: 700; color: var(--mid-brown); text-transform: uppercase; letter-spacing: 0.06em; margin: 18px 0 8px; }
-.modal-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 6px; }
+.modal-actions { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
 
 /* ---------- Breathing orb ---------- */
 .breath-stage {
-  position: relative; height: 200px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  margin: 20px 0 10px;
+  /* Match original index.html sizing/spacing */
+  width: 220px; height: 220px; margin: 18px auto 8px;
+  display: flex; align-items: center; justify-content: center; position: relative;
 }
 .breath-orb {
-  width: 100px; height: 100px; border-radius: 50%;
-  background: radial-gradient(circle, #8BC34A 0%, #5C8A3A 100%);
-  transition: transform 0.5s ease, opacity 0.5s ease;
+  width: 150px; height: 150px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--leaf-bright), var(--leaf));
+  transform: scale(1); transition: transform 4s cubic-bezier(0.45, 0, 0.45, 1);
+  box-shadow: 0 0 36px rgba(92, 138, 58, 0.35);
 }
-.breath-orb.inhale { animation: breatheIn 4s ease forwards; }
-.breath-orb.hold { transform: scale(1.5); }
-.breath-orb.exhale { animation: breatheOut 8s ease forwards; }
-@keyframes breatheIn { from { transform: scale(1); } to { transform: scale(1.5); } }
-@keyframes breatheOut { from { transform: scale(1.5); } to { transform: scale(1); } }
+.breath-orb.inhale { transform: scale(1.4); transition-duration: 4s; }
+.breath-orb.hold { transform: scale(1.4); transition-duration: 7s; }
+.breath-orb.exhale { transform: scale(0.9); transition-duration: 8s; }
+/* label sits centered on orb with light text */
 .breath-label {
-  position: absolute; bottom: 30px;
-  font-size: 20px; font-weight: 700; color: var(--brown-text);
+  position: absolute; font-size: 18px; color: var(--cream); font-weight: 600; pointer-events: none;
 }
 .breath-sub { text-align: center; font-size: 14px; color: var(--mid-brown); }
 
