@@ -15,16 +15,16 @@ export const MILESTONES: Milestone[] = [
 ]
 
 export const DAY_MILESTONES = [
-  { day: 1,   key: 'day1',   label: 'Day 1 · First clean day' },
-  { day: 7,   key: 'day7',   label: 'Day 7 · First week clean' },
-  { day: 14,  key: 'day14',  label: 'Day 14 · Two weeks in' },
-  { day: 30,  key: 'day30',  label: 'Day 30 · Month one' },
-  { day: 60,  key: 'day60',  label: 'Day 60 · The Relief begins' },
-  { day: 90,  key: 'day90',  label: 'Day 90 · The Proof' },
-  { day: 120, key: 'day120', label: 'Day 120 · The Other Side' },
-  { day: 180, key: 'day180', label: 'Day 180 · Half a year' },
-  { day: 270, key: 'day270', label: 'Day 270 · Nine months' },
-  { day: 365, key: 'day365', label: 'Day 365 · One year clean' },
+  { day: 1,   key: 'day1',   label: 'Day 1' },
+  { day: 7,   key: 'day7',   label: '1 week' },
+  { day: 14,  key: 'day14',  label: '2 weeks' },
+  { day: 30,  key: 'day30',  label: '1 month' },
+  { day: 60,  key: 'day60',  label: '2 months' },
+  { day: 90,  key: 'day90',  label: '3 months' },
+  { day: 120, key: 'day120', label: '4 months' },
+  { day: 180, key: 'day180', label: '6 months' },
+  { day: 270, key: 'day270', label: '9 months' },
+  { day: 365, key: 'day365', label: '1 year' },
 ]
 
 export const DAY_MILESTONE_MAP: Record<string, string | null> = {
@@ -81,9 +81,9 @@ export const WITHDRAWAL_STAGES: Record<number, { text: string }> = {
 export const PRODUCTS: Product[] = [
   { id: 'necklace', name: 'BreatheFree necklace', tagline: 'Your primary ritual. Resistance breathing, everywhere you go.', icon: '🫁', url: 'https://breathefree.shop/products/the-smoke-free-necklace', badge: null },
   { id: 'refills', name: 'Pure flavor refills', tagline: "Hand-to-mouth + flavor. For cravings breath alone can't handle.", icon: '🍃', url: 'https://breathefree.shop/products/flavor-refills-copy', badge: 'Most popular' },
-  { id: 'mullein', name: 'Mullein gummies', tagline: 'Lung + respiratory support.', icon: '🌿', url: 'https://breathefree.shop/products/mullein-gummies', badge: null },
-  { id: 'zenflow', name: 'ZenFlow breathing stone', tagline: 'Tactile calm. Hold it, breathe with it, ground yourself.', icon: '🪨', url: 'https://breathefree.shop/products/zenflow-breathing-stone', badge: null },
-  { id: 'spinner', name: 'Irritability spinner ring', tagline: 'Pocket reset. For mid-meeting cravings, queue anxiety.', icon: '💍', url: 'https://breathefree.shop/products/irritability-spinner-rings', badge: null },
+  { id: 'mullein', name: 'Mullein Gummies', tagline: 'For clearer breathing and less coughing.', icon: '🌿', url: 'https://breathefree.shop/products/mullein-gummies', badge: null },
+  { id: 'zenflow', name: 'ZenFlow Breathing Stone', tagline: 'Stronger resistance, in a pocket-friendly stone.', icon: '🪨', url: 'https://breathefree.shop/products/zenflow-breathing-stone', badge: null },
+  { id: 'spinner', name: 'Irritability Spinner Rings', tagline: 'Spin it to ride out a craving.', icon: '💍', url: 'https://breathefree.shop/products/irritability-spinner-rings', badge: null },
 ]
 
 export const FLAVORS: Flavor[] = [

@@ -146,7 +146,7 @@ export function interpolate(str: string, state?: AppState | null): string {
 }
 
 export function getStageLabel(totalCleanDays: number): string {
-  if (totalCleanDays < 30) return 'The Battle'
+  if (totalCleanDays < 30) return ''
   if (totalCleanDays < 60) return 'The Relief'
   if (totalCleanDays < 90) return 'The Proof'
   return 'The Other Side'

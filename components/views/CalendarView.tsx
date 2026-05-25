@@ -65,7 +65,7 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
       <Topbar onProfileClick={() => onNavigate('profile')} />
 
       <div className="cal-summary">
-        <div className="label">Cumulative clean days</div>
+        <div className="label">Days since quit date <span title="Every day since your quit date counts. Slips included. Showing up and continuing to try is what counts here." style={{ cursor: 'help', color: 'var(--mid-brown)' }}>?</span></div>
         <div className="row">
           <LeafIcon className="leaf-svg" style={{ width: 26, height: 26, color: 'var(--leaf)' }} />
           <div className="num" id="cal-clean-days">{computed.totalCleanDays}</div>

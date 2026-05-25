@@ -6,6 +6,7 @@ import { useApp } from '@/hooks/useApp'
 import { signUp, signIn } from '@/lib/userDataService'
 import { recomputeRunState } from '@/lib/stateUtils'
 import { LoginModal } from '@/components/modals/LoginModal'
+import { BreathingModal } from '@/components/modals/BreathingModal'
 
 interface OnboardingViewProps {
   onComplete: () => void
@@ -46,6 +47,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   const [hasRefills, setHasRefills] = useState('')
   const [trigger, setTrigger] = useState('')
   const [error, setError] = useState('')
+  const [showBreath, setShowBreath] = useState(false)
 
   const goNext = () => setStep((s) => Math.min(s + 1, STEPS - 1))
   const goBack = () => setStep((s) => Math.max(s - 1, 0))
@@ -169,12 +171,12 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
         <div className="onb-step active" data-step={0}>
           <ProgressDots current={0} />
           <div style={{ fontSize: 44, marginBottom: 16 }}>🌿</div>
-          <h1>Welcome to BreatheFree.</h1>
+          <h1>Welcome to the BreatheFree Quit App</h1>
           <p style={{ marginTop: 14, fontSize: 17, color: 'var(--brown-text)' }}>
-            This isn&apos;t a streak counter. It&apos;s a quit partner — built around how the brain actually breaks nicotine habits.
+            For people who've tried quitting before. Handle cravings, track clean days, and stay in your routine when it gets hard.
           </p>
           <p style={{ marginTop: 14, color: 'var(--mid-brown)' }}>
-            Three minutes to set up. No shame if you slip. Your progress is yours to keep.
+            Two minutes to set up. Slips don't erase your progress.
           </p>
           <div className="onb-cta">
             <button type="button" className="btn btn--dark" onClick={goNext}>Let&apos;s start →</button>
@@ -188,10 +190,9 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           <ProgressDots current={1} />
           <div className="onb-eyebrow">About you</div>
           <h2>A few quick details.</h2>
-          <p style={{ marginTop: 8 }}>Your first name shows in your pod. Your email syncs progress across devices.</p>
           <div className="field" style={{ marginTop: 20 }}>
             <label>First name</label>
-            <input type="text" placeholder="Tam" autoComplete="given-name" value={name} onChange={(e) => setName(e.target.value)} />
+            <input type="text" placeholder="First Name" autoComplete="given-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="field">
             <label>Email</label>
@@ -245,16 +246,15 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           <div className="onb-eyebrow">Your why</div>
           <h2>Who are you becoming?</h2>
           <p style={{ marginTop: 8, color: 'var(--mid-brown)' }}>
-            The single biggest predictor of quitting for good is a clear identity — not willpower. Pick the one that hits hardest.
+            This is the line we'll show you on the hard days. The one you'll see when a craving hits at 10 P.M. Pick the one that means the most.
           </p>
           <div className="chips" id="onb-why" style={{ marginTop: 0, flexDirection: 'column', gap: 10 }}>
             {[
-              { value: 'parent', label: '👨‍👧 Someone my kids look up to' },
-              { value: 'athlete', label: '🏃 Someone who breathes easy again' },
-              { value: 'control', label: '🧘 Someone in control of my own days' },
-              { value: 'saver', label: "💰 Someone who doesn't burn money on this" },
-              { value: 'free', label: "🌿 Someone who's just… free of it" },
-              { value: 'other', label: '✏️ Other…' },
+              { value: 'athlete', label: '🫁 To breathe better and live longer' },
+              { value: 'parent', label: '👪 To be there for my family' },
+              { value: 'saver', label: '💸 To stop wasting money on it' },
+              { value: 'control', label: '🏅 To prove I can finally do it' },
+              { value: 'other', label: '✏️ Other' },
             ].map((opt) => (
               <button
                 key={opt.value}
@@ -293,16 +293,16 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           <div className="onb-eyebrow">The start line</div>
           <h2>When are you quitting?</h2>
           <p style={{ marginTop: 8, color: 'var(--mid-brown)' }}>
-            Fresh-start dates work best. Pick a Monday, the 1st, or a birthday. Already quit? Pick a past date — the app catches up to where you really are.
+            Pick your quit date. Already quit? Use the day you actually stopped.
           </p>
           <div className="field" style={{ marginTop: 20 }}>
             <label>Quit date</label>
             <input type="date" id="onb-quitdate" value={quitDate} onChange={(e) => setQuitDate(e.target.value)} />
           </div>
           <div className="field">
-            <label>Daily spend on smoking / vaping</label>
+            <label>What do you spend per week?</label>
             <input type="number" id="onb-spend" placeholder="20" inputMode="numeric" value={dailySpend} onChange={(e) => setDailySpend(e.target.value)} />
-            <div className="muted" style={{ marginTop: 6 }}>We&apos;ll turn this into wins you can feel.</div>
+            <div className="muted" style={{ marginTop: 6 }}>So we can show you the money you've saved.</div>
           </div>
           {error && <p style={{ color: 'var(--coral)', fontSize: 13 }}>{error}</p>}
           <div className="onb-cta">
@@ -319,15 +319,18 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           <div className="onb-eyebrow">Your toolkit</div>
           <h2>When a craving hits, the necklace is your move.</h2>
           <p style={{ marginTop: 8, color: 'var(--mid-brown)' }}>
-            Nicotine addiction is two loops — the chemical one and the hand-to-mouth one. Your BreatheFree necklace handles both with resistance breathing.
+            Replaces the hand-to-mouth habit. Pull it out, take six slow breaths.
           </p>
-          <div className="product-card" style={{ marginTop: 16 }}>
-            <div className="product-icon">🫁</div>
-            <div className="product-body">
-              <div className="product-name">BreatheFree necklace</div>
-              <div className="product-sub">Your primary ritual · activated</div>
-            </div>
-            <div className="pill-active">Ready</div>
+          <div style={{ marginTop: 16 }}>
+            <button type="button" className="product-card" onClick={() => setShowBreath(true)} aria-label="Start guided breathing">
+              <div className="product-icon">🫁</div>
+              <div className="product-body">
+                <div className="product-name">Start guided breathing →</div>
+                <div className="product-sub">Pull it out, take six slow breaths.</div>
+              </div>
+              <div className="pill-active">6 rounds</div>
+            </button>
+            <BreathingModal isOpen={showBreath} onClose={() => setShowBreath(false)} urgent onComplete={() => setShowBreath(false)} />
           </div>
           <div className="field" style={{ marginTop: 20 }}>
             <label>Do you also have flavor refills?</label>
@@ -338,18 +341,18 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                 </button>
               ))}
             </div>
-            <div className="muted" style={{ marginTop: 8 }}>Refills add flavor when breath alone isn&apos;t enough.</div>
+            <div className="muted" style={{ marginTop: 8 }}>Natural flavored refills. Give cravings something to taste, no nicotine.</div>
           </div>
           <div className="field" style={{ marginTop: 20 }}>
-            <label>When&apos;s your hardest craving moment?</label>
+            <label>When does your hardest craving usually hit?</label>
             <div className="chips" id="onb-trigger">
               {[
                 { value: 'morning', label: 'First coffee' },
                 { value: 'meal', label: 'After meals' },
-                { value: 'break', label: 'Work break' },
-                { value: 'stress', label: 'Stress' },
-                { value: 'night', label: '10PM wind-down' },
+                { value: 'break', label: 'Work stress' },
                 { value: 'social', label: 'Social' },
+                { value: 'night', label: 'Late evenings' },
+                { value: 'other', label: 'Other' },
               ].map((opt) => (
                 <button key={opt.value} type="button" className={`chip${trigger === opt.value ? ' selected' : ''}`} onClick={() => setTrigger(opt.value)}>
                   {opt.label}

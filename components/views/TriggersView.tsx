@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Topbar } from '@/components/layout/Topbar'
 import { useApp } from '@/hooks/useApp'
 import { RITUAL_DATA } from '@/constants'
@@ -93,6 +93,58 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
   }
 
   const { rows: triggerRows, hasSlip, topKey } = buildTriggerMap()
+  const triggerRef = useRef<HTMLDivElement | null>(null)
+
+  const exportNodeAsPNG = async (node: HTMLElement, filename = 'trigger-map.png') => {
+    const loadHtml2CanvasFromCdn = () => new Promise<any>((resolve, reject) => {
+      if (typeof window !== 'undefined' && (window as any).html2canvas) return resolve((window as any).html2canvas)
+      const s = document.createElement('script')
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+      s.onload = () => resolve((window as any).html2canvas)
+      s.onerror = reject
+      document.head.appendChild(s)
+    })
+
+    try {
+      let html2canvas: any = null
+      try {
+        const mod = await import('html2canvas')
+        html2canvas = (mod && (mod as any).default) || mod
+      } catch (e) {
+        // fallback to CDN
+        try {
+          html2canvas = await loadHtml2CanvasFromCdn()
+        } catch (err) {
+          console.error('html2canvas load failed', err)
+        }
+      }
+
+      if (!html2canvas) {
+        alert('html2canvas not available. Install it or allow CDN fallback.')
+        return
+      }
+
+      const canvas = await html2canvas(node, { scale: window.devicePixelRatio || 1 })
+      return new Promise<void>((resolve) => {
+        canvas.toBlob((b: Blob | null) => {
+          if (!b) {
+            alert('Unable to export image.')
+            return resolve()
+          }
+          const a = document.createElement('a')
+          a.href = URL.createObjectURL(b)
+          a.download = filename
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+          resolve()
+        }, 'image/png')
+      })
+    } catch (err) {
+      console.error('export failed', err)
+      alert('Export failed. Try taking a screenshot or install html2canvas for better export support.')
+    }
+  }
 
   return (
     <div className="view active" id="triggers" style={{ padding: '0 22px 24px' }}>
@@ -100,14 +152,14 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
 
       <div className="page-header">
         <h1 className="page-title">Your triggers &amp; rituals</h1>
-        <p className="page-intro">Every craving you log here builds a map of your real triggers — not guesses.</p>
+        <p className="page-intro">Every craving you log here builds a map of your real triggers</p>
       </div>
 
       <div className="section-row">
         <div className="section-label">Trigger map</div>
       </div>
       <div id="trigger-map">
-        <div className="trigger-card">
+        <div className="trigger-card" ref={triggerRef}>
           <h3>Trigger map</h3>
           {triggerRows.map((r) => (
             <div key={r.key} className="trigger-row">
@@ -125,6 +177,11 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
               <>Log a craving to see your top trigger.</>
             )}
           </div>
+          <div style={{ marginTop: 12 }}>
+            <button className="btn btn--white-outline btn--small" onClick={() => {
+              if (triggerRef.current) exportNodeAsPNG(triggerRef.current, 'trigger-map.png')
+            }}>Download trigger map image</button>
+          </div>
         </div>
       </div>
 
@@ -135,16 +192,16 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
         <div className="ritual-card ritual-card--default">
           <div className="ritual-icon-box">{RITUAL_DATA[state.ritual || 'necklace'].icon}</div>
           <div className="ritual-body">
-            <div className="ritual-name">{RITUAL_DATA[state.ritual || 'necklace'].name}</div>
-            <div className="ritual-sub">Primary · your main craving tool</div>
+            <div className="ritual-name">BreatheFree necklace (Primary)</div>
+            <div className="ritual-sub">Pull out and breathe through the urge</div>
           </div>
           <div className="pill-default">Default</div>
         </div>
         <div className="ritual-card">
           <div className="ritual-icon-box">🍃</div>
           <div className="ritual-body">
-            <div className="ritual-name">Flavor refills</div>
-            <div className="ritual-sub">Backup · after meals</div>
+            <div className="ritual-name">Flavor refills (Backup)</div>
+            <div className="ritual-sub">When you need more support</div>
           </div>
         </div>
         <div className="ritual-card">
@@ -160,7 +217,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
           <div className="section-label">IF / THEN PLAN</div>
         </div>
         <div className="callout" style={{ marginTop: 8, marginBottom: 12 }}>
-          <p>If I try to work on this then this should be working</p>
+          <p>If a craving hits, then I&apos;ll pull out my necklace and take 6 slow breaths.</p>
           <a className="callout-link" href="#" onClick={(e) => { e.preventDefault(); onToast('Edit plan coming soon') }}>Edit my plan →</a>
         </div>
         {(state.customRituals || []).map((r, i) => (
@@ -215,7 +272,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
 
       <div id="risky-list">
         {(!state.riskyDayPlans || state.riskyDayPlans.length === 0) ? (
-          <div className="callout callout-empty">No plans yet. Pre-planning beats improvising every time.</div>
+          <div className="callout callout-empty">No plans yet. Pre-planning beats improvising every time. Examples: holidays, vacations, work stress weeks, anniversaries.</div>
         ) : (
           state.riskyDayPlans.map((plan, i) => (
             <div key={i} className="risky-plan-card">

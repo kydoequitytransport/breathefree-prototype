@@ -13,7 +13,7 @@ export function TribeView({ onNavigate }: TribeViewProps) {
       <div className="page-header">
         <h1 className="page-title">The Circle</h1>
         <p className="page-intro">
-          A private Facebook group for people walking this journey together. Share wins, screenshot your milestones, read stories from people ahead of you.
+          A private support group where you stay accountable, share milestones, get real advice, and read stories from people who&apos;ve been there.
         </p>
       </div>
 
@@ -37,14 +37,15 @@ export function TribeView({ onNavigate }: TribeViewProps) {
       </div>
 
       <div className="section-row">
-        <div className="section-label">How the Circle works</div>
+        <div className="section-label">How we show up here</div>
       </div>
       <div className="callout checklist-callout">
         {[
-          'Hit a milestone → screenshot it, post to the group.',
-          'Slip? Post it. The Circle will hold space.',
-          'First names only. No judgment. No rankings.',
-          'Staff and long-term quitters moderate gently.',
+          'Post your wins and milestones.',
+          'Post your slips. You\'ll find support, not judgment.',
+          'Pass on what\'s working: Your day 30 helps someone else\'s day 1.',
+          'Respond with care and encourage each other.',
+          'No judging anyone\'s pace.',
         ].map((item) => (
           <p key={item}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -56,16 +57,16 @@ export function TribeView({ onNavigate }: TribeViewProps) {
       </div>
 
       <div className="section-row">
-        <div className="section-label">Ready to share your own?</div>
+        <div className="section-label">Ready to share?</div>
       </div>
       <div className="callout" style={{ marginBottom: 12 }}>
-        <p>Every milestone you hit is proof that this works. Your post today is someone&apos;s reason to keep going tomorrow.</p>
+        <p>Post your story, celebrate a milestone, ask for advice, talk about a slip, or just check in. The Circle is here for it.</p>
       </div>
       <button
         className="btn btn--dark"
         onClick={() => window.open('https://web.facebook.com/groups/breathefreecircle', '_blank')}
       >
-        Post your progress →
+        Post in the Circle →
       </button>
     </div>
   )

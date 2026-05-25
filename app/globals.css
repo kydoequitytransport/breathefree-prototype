@@ -521,6 +521,7 @@ html, body {
   padding: 14px; display: flex; align-items: center; gap: 12px;
   border: 1.5px solid transparent; cursor: pointer;
   transition: border 0.15s, transform 0.05s; position: relative;
+  text-decoration: none; color: inherit;
 }
 .flavor-card:active { transform: scale(0.985); }
 .flavor-card--active { border-color: var(--leaf); }
@@ -618,6 +619,31 @@ html, body {
   color: var(--mid-brown); font-weight: 500;
 }
 .quitdate-card .value { font-size: 17px; color: var(--brown-text); font-weight: 500; margin-top: 4px; }
+.quitdate-edit {
+  background: none;
+  border: none;
+  color: var(--mid-brown);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.logout-link-subtle {
+  display: block;
+  text-align: center;
+  margin: 10px 0 4px;
+  color: rgba(139, 111, 71, 0.85);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+}
 
 /* ---------- Commitment ---------- */
 .commitment {

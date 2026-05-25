@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Topbar } from '@/components/layout/Topbar'
 import { useApp } from '@/hooks/useApp'
 import { recomputeRunState, freeTerm } from '@/lib/stateUtils'
@@ -18,6 +19,8 @@ interface ProfileViewPropsExt extends ProfileViewProps {
 
 export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsExt) {
   const { state, saveState, track } = useApp()
+  const [isEditingQuitDate, setIsEditingQuitDate] = useState(false)
+  const [quitDateDraft, setQuitDateDraft] = useState('')
 
   if (!state) return null
 
@@ -46,14 +49,52 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
     onLogout()
   }
 
+  const handleEditQuitDate = () => {
+    const current = state.quitDate || new Date().toISOString().split('T')[0]
+    setQuitDateDraft(current)
+    setIsEditingQuitDate(true)
+  }
+
+  const handleCancelQuitDateEdit = () => {
+    setIsEditingQuitDate(false)
+    setQuitDateDraft('')
+  }
+
+  const handleSaveQuitDate = () => {
+    const val = quitDateDraft.trim()
+    if (!val || !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+      alert('Please use YYYY-MM-DD format.')
+      return
+    }
+
+    const parsed = new Date(val)
+    if (Number.isNaN(parsed.getTime())) {
+      alert('Invalid date.')
+      return
+    }
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (parsed > today) {
+      alert('Quit date cannot be in the future.')
+      return
+    }
+
+    const updated = { ...state, quitDate: val, runStartDate: val }
+    saveState(updated)
+    track('Quit Date Updated', { quitDate: val })
+    setIsEditingQuitDate(false)
+  }
+
   const substanceText =
     state.substance === 'both' ? 'smoking and vaping'
     : state.substance === 'vape' ? 'vaping'
     : 'smoking'
   const why = WHY_FIRST_PERSON[state.why] || `I'm becoming ${ft}.`
 
-  const quitDateDisplay = state.quitDate
-    ? new Date(state.quitDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const quitDateObj = state.quitDate ? new Date(state.quitDate) : null
+  const quitDateDisplay = (quitDateObj && !Number.isNaN(quitDateObj.getTime()))
+    ? quitDateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
     : '—'
 
   return (
@@ -81,7 +122,7 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
           </div>
           <div className="lifetime-stat">
             <div className="num" id="profile-cravings">{state.cravingsBeat || 0}</div>
-            <div className="lbl">Cravings beat</div>
+            <div className="lbl">Cravings beaten</div>
           </div>
           <div className="lifetime-stat">
             <div className="num" id="profile-milestones">{(state.unlockedMilestones || []).length}</div>
@@ -93,10 +134,40 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
 
       {/* Quit date */}
       <div className="quitdate-card">
-        <div>
-          <div className="label">Quit date</div>
-          <div className="value" id="profile-quitdate">{quitDateDisplay}</div>
-        </div>
+        {!isEditingQuitDate ? (
+          <>
+            <div>
+              <div className="label">Quit date</div>
+              <div className="value" id="profile-quitdate">{quitDateDisplay}</div>
+            </div>
+            <button className="quitdate-edit" onClick={handleEditQuitDate}>Edit</button>
+          </>
+        ) : (
+          <div style={{ width: '100%' }}>
+            <div className="label">Quit date</div>
+            <input
+              type="date"
+              value={quitDateDraft}
+              max={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setQuitDateDraft(e.target.value)}
+              style={{
+                marginTop: 8,
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 10,
+                border: '1.5px solid rgba(45,31,18,0.14)',
+                fontFamily: 'inherit',
+                fontSize: 14,
+                color: 'var(--brown-text)',
+                background: 'white',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <button className="btn btn--dark" style={{ padding: '9px 12px', fontSize: 14 }} onClick={handleSaveQuitDate}>Save</button>
+              <button className="btn--ghost" style={{ width: 'auto', padding: '9px 4px', fontSize: 14 }} onClick={handleCancelQuitDateEdit}>Cancel</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Commitment section removed per design parity */}
@@ -112,7 +183,7 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
 
       {/* Auth */}
       <div style={{ marginTop: 18 }}>
-        <button className="btn--ghost" onClick={handleLogout} style={{ color: 'var(--coral)' }}>
+        <button className="logout-link-subtle" onClick={handleLogout}>
           Log out
         </button>
       </div>

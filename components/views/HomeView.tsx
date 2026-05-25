@@ -12,7 +12,7 @@ import {
   hoursSinceRunStart,
   interpolate,
 } from '@/lib/stateUtils'
-import { WHY_IDENTITY, RITUAL_DATA, TRIGGER_LABELS, MILESTONES } from '@/constants'
+import { WHY_IDENTITY, RITUAL_DATA, TRIGGER_LABELS, MILESTONES, DAY_MILESTONES, DAY_MILESTONE_MAP } from '@/constants'
 import type { ViewId } from '@/types'
 
 interface HomeViewProps {
@@ -28,10 +28,25 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
   const checkForNewMilestones = useCallback(() => {
     if (!state) return
     const hours = hoursSinceRunStart(state)
+    const computed = recomputeRunState(state)
+    const cumDays = computed.currentRun || 0
     const unlocked = [...(state.unlockedMilestones || [])]
     let changed = false
     let celebrateKey: string | null = null
 
+    // First: unlock day-based milestones (map to MILESTONES keys)
+    for (const dm of DAY_MILESTONES) {
+      if (cumDays < dm.day) break
+      const mapped = DAY_MILESTONE_MAP[dm.key]
+      if (!mapped) continue
+      if (unlocked.includes(mapped)) continue
+      unlocked.push(mapped)
+      changed = true
+      const m = MILESTONES.find((x) => x.key === mapped)
+      if (m?.celebrate && !celebrateKey) celebrateKey = m.key
+    }
+
+    // Then: existing hours-based milestones (keep previous behavior for non-day items)
     for (const m of MILESTONES) {
       if (hours < m.hours) break
       if (unlocked.includes(m.key)) continue
@@ -91,14 +106,17 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
       {/* Dark hero card */}
       <div className="hero-dark">
         <div className="hero-row">
-          <div className="hero-stage" id="hero-identity">{state.name} · {stage}</div>
+          <div className="hero-stage" id="hero-identity">{state.name}{stage ? ` · ${stage}` : ''}</div>
           <div className="hero-day-badge" id="hero-day-badge">DAY {computed.currentRun}</div>
         </div>
         <div className="hero-mid">
           <LeafIcon className="leaf-svg" style={{ width: 44, height: 44, flexShrink: 0, color: 'var(--leaf-bright)' }} />
           <div>
             <div className="hero-num" id="total-clean-days">{computed.totalCleanDays}</div>
-            <div className="hero-num-label">Cumulative clean days</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="hero-num-label">Days since quit date</div>
+              <button className="hint-btn" title={"Every day since your quit date counts. Slips included. Showing up and continuing to try is what counts here."} style={{ background: 'none', border: 'none', cursor: 'help', color: 'var(--mid-brown)', fontWeight: 700 }}>?</button>
+            </div>
           </div>
         </div>
         <div className="hero-divider" />
@@ -173,15 +191,15 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
         </div>
       )}
 
-      {/* Circle snapshot */}
-      <div className="section-row">
-        <div className="section-label">The Circle</div>
-        <button className="link" onClick={() => onNavigate('tribe')}>Open →</button>
-      </div>
-      <div style={{ background: 'white', borderRadius: 'var(--radius-card)', padding: 16, cursor: 'pointer' }} onClick={() => onNavigate('tribe')}>
-        <p style={{ fontSize: 14, color: 'var(--brown-text)' }} id="pod-snapshot-text">
-          You're one of 75,000+ people on this path. Your win is someone else&apos;s reason to keep going.
-        </p>
+      {/* Craving + slip CTAs (moved up; Circle removed) */}
+      <div style={{ marginTop: 24 }}>
+        <button className="btn btn--coral" onClick={onCraving}>
+          <svg className="bolt" viewBox="0 0 24 24" fill="white">
+            <polygon points="13,2 4,14 12,14 11,22 20,10 12,10" />
+          </svg>
+          Craving now
+        </button>
+        <button className="slip-link" onClick={onSlip}>I slipped</button>
       </div>
 
       {/* Craving + slip CTAs */}
