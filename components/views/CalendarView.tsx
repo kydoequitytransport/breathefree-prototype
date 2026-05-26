@@ -54,7 +54,7 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
       fact: "You're building the new you, one clean day at a time.",
       emoji: '🌿',
       celebrate: true,
-      hours: 0,
+      day: dm.day,
     })
   }
 
