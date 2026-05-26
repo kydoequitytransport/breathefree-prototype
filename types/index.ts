@@ -1,6 +1,7 @@
 export interface AppState {
   name: string
   email?: string
+  timezone: string
   substance: 'vape' | 'smoke' | 'both'
   why: string
   quitDate: string

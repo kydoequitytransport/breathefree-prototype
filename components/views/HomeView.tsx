@@ -145,6 +145,9 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
         <div className="section-label">This week</div>
         <button className="link" onClick={() => onNavigate('calendar')}>View calendar →</button>
       </div>
+      <div style={{ fontSize: 12, color: 'var(--mid-brown)', marginTop: -4, marginBottom: 8 }}>
+        Timezone: {state.timezone || 'UTC'}
+      </div>
       <div className="weekstrip" id="weekstrip">
         {weekDays.map(({ d, isToday, isFuture, isSlip, isClean, dayName }) => {
           let cls = 'weekcell'

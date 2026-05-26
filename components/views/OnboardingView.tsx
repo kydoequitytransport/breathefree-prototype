@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { AppState } from '@/types'
 import { useApp } from '@/hooks/useApp'
 import { signUp, signIn } from '@/lib/userDataService'
-import { recomputeRunState } from '@/lib/stateUtils'
+import { detectBrowserTimeZone, recomputeRunState } from '@/lib/stateUtils'
 import { LoginModal } from '@/components/modals/LoginModal'
 import { BreathingModal } from '@/components/modals/BreathingModal'
 
@@ -115,6 +115,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
     const baseState: AppState = {
       name: name.trim(),
       email,
+      timezone: detectBrowserTimeZone(),
       substance: substance as AppState['substance'],
       why: why.trim(),
       quitDate,

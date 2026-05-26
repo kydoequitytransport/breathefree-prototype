@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Topbar } from '@/components/layout/Topbar'
 import { useApp } from '@/hooks/useApp'
-import { recomputeRunState, freeTerm } from '@/lib/stateUtils'
+import { recomputeRunState, freeTerm, detectBrowserTimeZone } from '@/lib/stateUtils'
 import { WHY_IDENTITY } from '@/constants'
 import { signOut, clearLocalStorage } from '@/lib/userDataService'
 import type { ViewId } from '@/types'
@@ -24,6 +24,8 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
   const [whyError, setWhyError] = useState('')
   const [isEditingQuitDate, setIsEditingQuitDate] = useState(false)
   const [quitDateDraft, setQuitDateDraft] = useState('')
+  const [isEditingTimezone, setIsEditingTimezone] = useState(false)
+  const [timezoneDraft, setTimezoneDraft] = useState('')
 
   if (!state) return null
 
@@ -100,6 +102,28 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
     saveState(updated)
     track('Quit Date Updated', { quitDate: val })
     setIsEditingQuitDate(false)
+  }
+
+  const handleEditTimezone = () => {
+    setTimezoneDraft(state.timezone || detectBrowserTimeZone())
+    setIsEditingTimezone(true)
+  }
+
+  const handleCancelTimezoneEdit = () => {
+    setTimezoneDraft('')
+    setIsEditingTimezone(false)
+  }
+
+  const handleUseDeviceTimezone = () => {
+    setTimezoneDraft(detectBrowserTimeZone())
+  }
+
+  const handleSaveTimezone = () => {
+    const nextTz = timezoneDraft.trim() || 'UTC'
+    const updated = { ...state, timezone: nextTz }
+    saveState(updated)
+    track('Timezone Updated', { timezone: nextTz })
+    setIsEditingTimezone(false)
   }
 
   const quitDateObj = state.quitDate ? new Date(state.quitDate) : null
@@ -205,6 +229,48 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <button className="btn btn--dark" style={{ padding: '9px 12px', fontSize: 14 }} onClick={handleSaveQuitDate}>Save</button>
               <button className="btn--ghost" style={{ width: 'auto', padding: '9px 4px', fontSize: 14 }} onClick={handleCancelQuitDateEdit}>Cancel</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Timezone */}
+      <div className="quitdate-card" style={{ marginTop: 12 }}>
+        {!isEditingTimezone ? (
+          <>
+            <div>
+              <div className="label">Timezone</div>
+              <div className="value">{state.timezone || 'UTC'}</div>
+              <div style={{ fontSize: 12, color: 'var(--mid-brown)', marginTop: 4 }}>Used for daily boundaries and streak timing.</div>
+            </div>
+            <button className="quitdate-edit" onClick={handleEditTimezone}>Edit</button>
+          </>
+        ) : (
+          <div style={{ width: '100%' }}>
+            <div className="label">Timezone</div>
+            <input
+              type="text"
+              value={timezoneDraft}
+              onChange={(e) => setTimezoneDraft(e.target.value)}
+              placeholder="e.g. Asia/Manila"
+              style={{
+                marginTop: 8,
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 10,
+                border: '1.5px solid rgba(45,31,18,0.14)',
+                fontFamily: 'inherit',
+                fontSize: 14,
+                color: 'var(--brown-text)',
+                background: 'white',
+              }}
+            />
+            <button className="btn--ghost" style={{ width: 'auto', padding: '8px 0', fontSize: 13, marginTop: 6 }} onClick={handleUseDeviceTimezone}>
+              Use device timezone ({detectBrowserTimeZone()})
+            </button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <button className="btn btn--dark" style={{ padding: '9px 12px', fontSize: 14 }} onClick={handleSaveTimezone}>Save</button>
+              <button className="btn--ghost" style={{ width: 'auto', padding: '9px 4px', fontSize: 14 }} onClick={handleCancelTimezoneEdit}>Cancel</button>
             </div>
           </div>
         )}

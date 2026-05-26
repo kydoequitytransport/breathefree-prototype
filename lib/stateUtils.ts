@@ -1,6 +1,15 @@
 import { MILESTONES } from "../constants";
 import { AppState } from "../types";
 
+export function detectBrowserTimeZone(): string {
+  if (typeof window === 'undefined') return 'UTC'
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  } catch {
+    return 'UTC'
+  }
+}
+
 export function parseStartMs(dateStr: string): number | null {
   const parsed = Date.parse(dateStr);
   return Number.isNaN(parsed) ? null : parsed;
@@ -116,6 +125,7 @@ export function runMigrations(state: AppState): AppState {
   if (!s.waves) s.waves = []
   if (s.hasRefills === undefined) s.hasRefills = s.ritual === 'refills'
   if (s.lifetimeCleanDays === undefined) s.lifetimeCleanDays = s.totalCleanDays || 0
+  if (!s.timezone || !String(s.timezone).trim()) s.timezone = detectBrowserTimeZone()
   return s
 }
 
