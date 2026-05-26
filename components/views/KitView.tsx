@@ -52,7 +52,7 @@ export function KitView({ onNavigate }: KitViewProps) {
               <div>
                 <div className="flavor-name">{f.name}</div>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--leaf)', textDecoration: 'underline', flexShrink: 0 }}>Open product</div>
+              <div style={{ fontSize: 16, color: 'var(--leaf)', textDecoration: 'none', flexShrink: 0 }}>&rarr;</div>
             </a>
           )
         })}

@@ -198,25 +198,6 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
         )}
       </div>
 
-      {/* Refills upsell */}
-      {!state.hasRefills && state.ritual === 'necklace' && (
-        <div id="refills-upsell" style={{ marginTop: 16 }}>
-          <div style={{ background: 'linear-gradient(135deg, var(--pill-bg), #E8F2D8)', borderRadius: 'var(--radius-card)', padding: 20, border: '1px solid rgba(92,138,58,0.25)' }}>
-            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-              <div style={{ fontSize: 32 }}>🍃</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: 'var(--pill-text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Stack your success</div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--brown-text)', marginTop: 4 }}>Add flavor refills</div>
-                <p style={{ fontSize: 13, color: 'var(--mid-brown)', marginTop: 6 }}>Breath handles the chemistry. Flavor handles the ritual moments. Most long-term quitters stack both.</p>
-              </div>
-            </div>
-            <a href="https://breathefree.shop/products/flavor-refills-copy" target="_blank" rel="noopener" className="btn btn--dark" style={{ marginTop: 14, textDecoration: 'none', display: 'flex', background: 'var(--leaf)' }}>
-              See the refills →
-            </a>
-          </div>
-        </div>
-      )}
-
       {/* Craving + slip CTAs (moved up; Circle removed) */}
       <div style={{ marginTop: 24 }}>
         <button className="btn btn--coral" onClick={onCraving}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Topbar } from '@/components/layout/Topbar'
 import { LeafIcon } from '@/components/ui/LeafIcon'
 import { useApp } from '@/hooks/useApp'
@@ -22,6 +22,7 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(new Date().getMonth())
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null)
+  const milestoneRef = useRef<HTMLDivElement | null>(null)
 
   if (!state) return null
 
@@ -60,12 +61,54 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
 
   const firstLockedIdx = DAY_MILESTONES.findIndex((m) => m.day > cumDays)
 
+  const exportNodeAsPNG = async (node: HTMLElement, filename = 'milestones.png') => {
+    const loadHtml2CanvasFromCdn = () => new Promise<any>((resolve, reject) => {
+      if (typeof window !== 'undefined' && (window as any).html2canvas) return resolve((window as any).html2canvas)
+      const s = document.createElement('script')
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+      s.onload = () => resolve((window as any).html2canvas)
+      s.onerror = reject
+      document.head.appendChild(s)
+    })
+
+    try {
+      let html2canvas: any = null
+      try {
+        html2canvas = await loadHtml2CanvasFromCdn()
+      } catch (err) {
+        console.error('html2canvas load failed', err)
+      }
+
+      if (!html2canvas) {
+        alert('Image export is currently unavailable.')
+        return
+      }
+
+      const canvas = await html2canvas(node, { scale: window.devicePixelRatio || 1 })
+      canvas.toBlob((b: Blob | null) => {
+        if (!b) {
+          alert('Unable to export image.')
+          return
+        }
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(b)
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+      }, 'image/png')
+    } catch (err) {
+      console.error('export failed', err)
+      alert('Export failed. Try again in a moment.')
+    }
+  }
+
   return (
     <div className="view active" id="calendar" style={{ padding: '0 22px 24px' }}>
       <Topbar onProfileClick={() => onNavigate('profile')} />
 
       <div className="cal-summary">
-        <div className="label">Days since quit date <span title="Every day since your quit date counts. Slips included. Showing up and continuing to try is what counts here." style={{ cursor: 'help', color: 'var(--mid-brown)' }}>?</span></div>
+        <div className="label">Days since quit date</div>
         <div className="row">
           <LeafIcon className="leaf-svg" style={{ width: 26, height: 26, color: 'var(--leaf)' }} />
           <div className="num" id="cal-clean-days">{computed.totalCleanDays}</div>
@@ -125,7 +168,7 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
       </div>
 
       {/* Milestones */}
-      <div className="milestones-section">
+      <div className="milestones-section" id="milestone-map" ref={milestoneRef}>
         <div className="ms-section-label">Your milestones</div>
         <div className="ms-list">
           {DAY_MILESTONES.map((m, i) => {
@@ -166,6 +209,13 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
             )
           })}
         </div>
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <button className="btn btn--white-outline btn--small" onClick={() => {
+          if (milestoneRef.current) exportNodeAsPNG(milestoneRef.current, 'milestones.png')
+        }}>
+          Download milestone image
+        </button>
       </div>
 
       <MilestoneModal

@@ -1,12 +1,11 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Topbar } from '@/components/layout/Topbar'
 import { useApp } from '@/hooks/useApp'
 import { RITUAL_DATA } from '@/constants'
 import { CheckinModal } from '@/components/modals/CheckinModal'
 import { BreathingModal } from '@/components/modals/BreathingModal'
-import { todayKeyInTimeZone } from '@/lib/stateUtils'
 import type { ViewId } from '@/types'
 
 interface TriggersViewProps {
@@ -24,8 +23,6 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
   const [showRiskyForm, setShowRiskyForm] = useState(false)
 
   if (!state) return null
-
-  const hasCheckedInToday = (state.checkinsLogged || []).some((c) => c.date === todayKeyInTimeZone(state.timezone))
 
   const saveRiskyDay = () => {
     if (!riskyEvent.trim()) { onToast('Enter the event name.'); return }
@@ -96,20 +93,19 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
       if (t === 'other' || t === 'unknown') return ''
       return aliasMap[t] || t
     }
+
     const beatCounts: Record<string, number> = {}
     const legacyCounts: Record<string, number> = {}
     const log = Array.isArray(eventLog) ? eventLog : []
+
     for (const ev of log) {
       const evName = String(ev.event || '').toLowerCase().trim()
       const t = normalizeTrigger(String((ev as any).trigger || ev.properties?.trigger || ''))
       if (!t || t === 'other' || t === 'unknown') continue
-      if (evName === 'craving beat') {
-        beatCounts[t] = (beatCounts[t] || 0) + 1
-      }
-      if (evName === 'slip logged') {
-        legacyCounts[t] = (legacyCounts[t] || 0) + 1
-      }
+      if (evName === 'craving beat') beatCounts[t] = (beatCounts[t] || 0) + 1
+      if (evName === 'slip logged') legacyCounts[t] = (legacyCounts[t] || 0) + 1
     }
+
     const hasBeatData = Object.keys(beatCounts).length > 0
     const counts = hasBeatData ? beatCounts : legacyCounts
     const keys = Array.from(new Set([...baselineKeys, ...Object.keys(counts)]))
@@ -123,76 +119,29 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
       if (b.count !== a.count) return b.count - a.count
       return a.label.localeCompare(b.label)
     })
-    const topKey = Object.keys(counts).reduce((a, b) => (counts[a] || 0) >= (counts[b] || 0) ? a : b, '')
+
+    const topKey = Object.keys(counts).reduce((a, b) => ((counts[a] || 0) >= (counts[b] || 0) ? a : b), '')
     const hasData = Object.keys(counts).length > 0
     const topLabel = triggerLabels[topKey] || (topKey ? prettifyLabel(topKey) : '')
     return { rows, hasData, topKey, topLabel }
   }
 
   const { rows: triggerRows, hasData, topKey, topLabel } = buildTriggerMap()
-  const triggerRef = useRef<HTMLDivElement | null>(null)
-
-  const exportNodeAsPNG = async (node: HTMLElement, filename = 'trigger-map.png') => {
-    const loadHtml2CanvasFromCdn = () => new Promise<any>((resolve, reject) => {
-      if (typeof window !== 'undefined' && (window as any).html2canvas) return resolve((window as any).html2canvas)
-      const s = document.createElement('script')
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
-      s.onload = () => resolve((window as any).html2canvas)
-      s.onerror = reject
-      document.head.appendChild(s)
-    })
-
-    try {
-      let html2canvas: any = null
-      try {
-        html2canvas = await loadHtml2CanvasFromCdn()
-      } catch (err) {
-        console.error('html2canvas load failed', err)
-      }
-
-      if (!html2canvas) {
-        alert('Image export is currently unavailable.')
-        return
-      }
-
-      const canvas = await html2canvas(node, { scale: window.devicePixelRatio || 1 })
-      canvas.toBlob((b: Blob | null) => {
-        if (!b) {
-          alert('Unable to export image.')
-          return
-        }
-        const a = document.createElement('a')
-        a.href = URL.createObjectURL(b)
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-      }, 'image/png')
-    } catch (err) {
-      console.error('export failed', err)
-      alert('Export failed. Try again in a moment.')
-    }
-  }
 
   return (
     <div className="view active" id="triggers" style={{ padding: '0 22px 24px' }}>
       <Topbar onProfileClick={() => onNavigate('profile')} />
 
-      <div className="page-header">
-        <h1 className="page-title">Your triggers &amp; rituals</h1>
-        <p className="page-intro">Every craving you log here builds a map of your real triggers</p>
-      </div>
-
       <div className="section-row">
         <div className="section-label">Trigger map</div>
       </div>
       <div id="trigger-map">
-          <div className="trigger-card" ref={triggerRef}>
+        <div className="trigger-card">
           <h3>Trigger map</h3>
           {triggerRows.map((r) => (
             <div key={r.key} className="trigger-row">
               <div className="trigger-name">{r.label}</div>
-              <div className={`trigger-bar-track trigger-bar--${r.count === Math.max(...triggerRows.map(x => x.count)) ? 'top' : 'low'}`}>
+              <div className={`trigger-bar-track trigger-bar--${r.count === Math.max(...triggerRows.map((x) => x.count)) ? 'top' : 'low'}`}>
                 <div className="trigger-bar-fill" style={{ width: `${r.pct}%` }} />
               </div>
               <div className="trigger-count">{r.count}</div>
@@ -204,13 +153,6 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
             ) : (
               <>Log a craving to see your top trigger.</>
             )}
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <button className="btn btn--white-outline btn--small" onClick={() => {
-              if (triggerRef.current) exportNodeAsPNG(triggerRef.current, 'trigger-map.png')
-            }}>
-              Download trigger map image
-            </button>
           </div>
         </div>
       </div>
