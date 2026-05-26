@@ -6,7 +6,7 @@ import { useApp } from '@/hooks/useApp'
 import { RITUAL_DATA } from '@/constants'
 import { CheckinModal } from '@/components/modals/CheckinModal'
 import { BreathingModal } from '@/components/modals/BreathingModal'
-import { todayKey } from '@/lib/stateUtils'
+import { todayKeyInTimeZone } from '@/lib/stateUtils'
 import type { ViewId } from '@/types'
 
 interface TriggersViewProps {
@@ -25,7 +25,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
 
   if (!state) return null
 
-  const hasCheckedInToday = (state.checkinsLogged || []).some((c) => c.date === todayKey())
+  const hasCheckedInToday = (state.checkinsLogged || []).some((c) => c.date === todayKeyInTimeZone(state.timezone))
 
   const saveRiskyDay = () => {
     if (!riskyEvent.trim()) { onToast('Enter the event name.'); return }
@@ -56,31 +56,45 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
 
   // Build trigger map data sorted highest to lowest, based on craving wins.
   const buildTriggerMap = () => {
-    const baselineKeys = ['meal', '10pm', 'stress', 'break', 'social', 'bored', 'morning', 'anxious', 'caught', 'alcohol', 'social pressure']
+    // Keep map aligned with current Craving/Slip options.
+    const baselineKeys = ['stress', 'social', 'alcohol', 'meal', '10pm', 'caught']
     const triggerLabels: Record<string, string> = {
+      stress: 'Stress',
+      social: 'Social pressure',
+      alcohol: 'Alcohol',
       meal: 'After meals',
       '10pm': '10PM',
-      night: '10PM',
-      stress: 'Stress',
-      break: 'Work break',
-      social: 'Social',
-      bored: 'Bored',
-      morning: 'Morning',
-      anxious: 'Anxious',
       caught: 'Caught off guard',
-      alcohol: 'Alcohol',
-      'social pressure': 'Social pressure',
     }
+
+    const prettifyLabel = (key: string) =>
+      key
+        .split(/\s+/)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+
+    const aliasMap: Record<string, string> = {
+      stress: 'stress',
+      social: 'social',
+      'social pressure': 'social',
+      alcohol: 'alcohol',
+      meal: 'meal',
+      'after meal': 'meal',
+      'after meals': 'meal',
+      '10pm': '10pm',
+      '10 pm': '10pm',
+      night: '10pm',
+      evening: '10pm',
+      'late evening': '10pm',
+      caught: 'caught',
+      'caught off guard': 'caught',
+    }
+
     const normalizeTrigger = (raw: string) => {
-      const t = raw.toLowerCase().trim()
+      const t = raw.toLowerCase().trim().replace(/\s+/g, ' ')
       if (!t) return ''
-      if (t === 'night' || t === 'evening') return '10pm'
-      if (t === 'after meal' || t === 'after meals') return 'meal'
-      if (t === 'work break') return 'break'
-      if (t === 'caught off guard') return 'caught'
-      if (t === 'anxiety') return 'anxious'
-      if (t === 'first coffee') return 'morning'
-      return t
+      if (t === 'other' || t === 'unknown') return ''
+      return aliasMap[t] || t
     }
     const beatCounts: Record<string, number> = {}
     const legacyCounts: Record<string, number> = {}
@@ -103,7 +117,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
     const rows = keys.map((key) => {
       const count = counts[key] || 0
       const pct = maxVal > 0 ? Math.round((count / maxVal) * 100) : 0
-      const label = triggerLabels[key] || (key.charAt(0).toUpperCase() + key.slice(1))
+      const label = triggerLabels[key] || prettifyLabel(key)
       return { key, label, count, pct }
     }).sort((a, b) => {
       if (b.count !== a.count) return b.count - a.count
@@ -111,7 +125,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
     })
     const topKey = Object.keys(counts).reduce((a, b) => (counts[a] || 0) >= (counts[b] || 0) ? a : b, '')
     const hasData = Object.keys(counts).length > 0
-    const topLabel = triggerLabels[topKey] || (topKey ? topKey.charAt(0).toUpperCase() + topKey.slice(1) : '')
+    const topLabel = triggerLabels[topKey] || (topKey ? prettifyLabel(topKey) : '')
     return { rows, hasData, topKey, topLabel }
   }
 

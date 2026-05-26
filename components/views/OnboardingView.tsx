@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { AppState } from '@/types'
 import { useApp } from '@/hooks/useApp'
 import { signUp, signIn } from '@/lib/userDataService'
-import { detectBrowserTimeZone, recomputeRunState } from '@/lib/stateUtils'
+import { detectBrowserTimeZone, recomputeRunState, todayKeyInTimeZone } from '@/lib/stateUtils'
 import { LoginModal } from '@/components/modals/LoginModal'
 import { BreathingModal } from '@/components/modals/BreathingModal'
 
@@ -41,7 +41,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   const [showPasswordHint, setShowPasswordHint] = useState(false)
   const [substance, setSubstance] = useState('')
   const [why, setWhy] = useState('')
-  const [quitDate, setQuitDate] = useState(new Date().toISOString().split('T')[0])
+  const [quitDate, setQuitDate] = useState(todayKeyInTimeZone(detectBrowserTimeZone()))
   const [dailySpend, setDailySpend] = useState('')
   const [hasRefills, setHasRefills] = useState('')
   const [trigger, setTrigger] = useState('')

@@ -1,6 +1,8 @@
 import { MILESTONES } from "../constants";
 import { AppState } from "../types";
 
+const DAY_MS = 86400000
+
 export function detectBrowserTimeZone(): string {
   if (typeof window === 'undefined') return 'UTC'
   try {
@@ -15,6 +17,43 @@ export function parseStartMs(dateStr: string): number | null {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+function isYMD(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
+function ymdToDayIndex(ymd: string): number {
+  const [y, m, d] = ymd.split('-').map(Number)
+  return Math.floor(Date.UTC(y, m - 1, d) / DAY_MS)
+}
+
+function addDaysToYMD(ymd: string, days: number): string {
+  const [y, m, d] = ymd.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  dt.setUTCDate(dt.getUTCDate() + days)
+  return toYMD(dt)
+}
+
+function normalizeToYMD(input: string, timeZone: string): string | null {
+  if (!input) return null
+  if (isYMD(input)) return input
+  const ms = parseStartMs(input)
+  if (!ms) return null
+  return ymdInTimeZone(new Date(ms), timeZone)
+}
+
+export function ymdInTimeZone(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const year = parts.find((p) => p.type === 'year')?.value || '1970'
+  const month = parts.find((p) => p.type === 'month')?.value || '01'
+  const day = parts.find((p) => p.type === 'day')?.value || '01'
+  return `${year}-${month}-${day}`
+}
+
 export function hoursSinceRunStart(state: AppState): number {
   const src = state.runStartDate || state.quitDate || state.startedAt
   if (!src) return 0
@@ -26,9 +65,11 @@ export function hoursSinceRunStart(state: AppState): number {
 export function daysSinceRunStart(state: AppState): number {
   const src = state.runStartDate || state.quitDate || state.startedAt
   if (!src) return 0
-  const ms = parseStartMs(src)
-  if (!ms) return 0
-  return Math.floor((Date.now() - ms) / 86400000)
+  const timeZone = state.timezone || detectBrowserTimeZone()
+  const startYMD = normalizeToYMD(src, timeZone)
+  if (!startYMD) return 0
+  const todayYMD = ymdInTimeZone(new Date(), timeZone)
+  return Math.max(0, ymdToDayIndex(todayYMD) - ymdToDayIndex(startYMD))
 }
 
 export function daysSinceDate(dateStr: string): number {
@@ -60,40 +101,36 @@ export function localYMD(date: Date): string {
  */
 export function recomputeRunState(state: AppState): AppState {
   const updated = { ...state }
-  const today = new Date()
-  const quitDate = updated.quitDate ? new Date(updated.quitDate) : null
-  const slips = (updated.slipsLog || []).map((s) => new Date(s))
-
-  const slipDateStrings = (updated.slipsLog || []).map((s) => s.slice(0, 10)).sort()
+  const timeZone = updated.timezone || detectBrowserTimeZone()
+  const todayStr = ymdInTimeZone(new Date(), timeZone)
+  const quitDateStr = updated.quitDate ? normalizeToYMD(updated.quitDate, timeZone) : null
+  const slipDateStrings = (updated.slipsLog || [])
+    .map((s) => normalizeToYMD(s, timeZone))
+    .filter((s): s is string => !!s)
+    .sort()
+  const slipDateSet = new Set(slipDateStrings)
   const hasSlips = slipDateStrings.length > 0
   const lastSlipDateStr = hasSlips ? slipDateStrings[slipDateStrings.length - 1] : null
-
-  const quitDateStr = updated.quitDate ? updated.quitDate.slice(0, 10) : null
-  const todayStr = localYMD(today)
   let currentRun = 0
 
   let startStr: string | null
   if (!hasSlips) {
     startStr = quitDateStr
   } else {
-    const afterSlip = new Date(lastSlipDateStr!)
-    afterSlip.setUTCDate(afterSlip.getUTCDate() + 1)
-    startStr = afterSlip.toISOString().slice(0, 10)
+    startStr = addDaysToYMD(lastSlipDateStr!, 1)
   }
 
   if (startStr && startStr <= todayStr) {
-    for (let d = new Date(startStr); d.toISOString().slice(0, 10) <= todayStr; d.setUTCDate(d.getUTCDate() + 1)) {
-      const dStr = d.toISOString().slice(0, 10)
-      if (!slipDateStrings.includes(dStr)) currentRun++
+    for (let dStr = startStr; dStr <= todayStr; dStr = addDaysToYMD(dStr, 1)) {
+      if (!slipDateSet.has(dStr)) currentRun++
     }
   }
   updated.currentRun = currentRun
 
   let totalCleanDays = 0
-  if (quitDate) {
-    for (let d = new Date(quitDate); d <= today; d.setDate(d.getDate() + 1)) {
-      const isSlip = slips.some((slip) => sameDay(slip, d))
-      if (!isSlip) totalCleanDays++
+  if (quitDateStr && quitDateStr <= todayStr) {
+    for (let dStr = quitDateStr; dStr <= todayStr; dStr = addDaysToYMD(dStr, 1)) {
+      if (!slipDateSet.has(dStr)) totalCleanDays++
     }
   }
   updated.totalCleanDays = totalCleanDays
@@ -165,7 +202,11 @@ export function getStageLabel(totalCleanDays: number): string {
 }
 
 export function todayKey(): string {
-  return new Date().toISOString().slice(0, 10)
+  return ymdInTimeZone(new Date(), detectBrowserTimeZone())
+}
+
+export function todayKeyInTimeZone(timeZone?: string): string {
+  return ymdInTimeZone(new Date(), timeZone || detectBrowserTimeZone())
 }
 
 export function checkMilestones(state: AppState): string[] {

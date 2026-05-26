@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { useApp } from '@/hooks/useApp'
-import { freeTerm, recomputeRunState, toYMD, parseStartMs } from '@/lib/stateUtils'
+import { freeTerm, recomputeRunState, toYMD, parseStartMs, todayKeyInTimeZone } from '@/lib/stateUtils'
 
 const SLIP_TRIGGERS = [
   { value: 'stress', label: 'Stress' },
@@ -25,7 +25,7 @@ export function SlipModal({ isOpen, onClose, onConfirm }: SlipModalProps) {
   const { state, saveState, track } = useApp()
   const [selectedTrigger, setSelectedTrigger] = useState('')
   const [otherText, setOtherText] = useState('')
-  const [slipDate, setSlipDate] = useState(new Date().toISOString().split('T')[0])
+  const [slipDate, setSlipDate] = useState(todayKeyInTimeZone())
 
   if (!state) return null
 
@@ -38,7 +38,7 @@ export function SlipModal({ isOpen, onClose, onConfirm }: SlipModalProps) {
     let slipTrigger = selectedTrigger
     if (slipTrigger === 'other' && otherText) slipTrigger = otherText
 
-    const todayStr = new Date().toISOString().split('T')[0]
+    const todayStr = todayKeyInTimeZone(state.timezone)
     const chosen = slipDate || todayStr
 
     if (chosen > todayStr) { alert('Cannot log a slip in the future.'); return }
@@ -75,7 +75,7 @@ export function SlipModal({ isOpen, onClose, onConfirm }: SlipModalProps) {
     onConfirm()
     setSelectedTrigger('')
     setOtherText('')
-    setSlipDate(new Date().toISOString().split('T')[0])
+    setSlipDate(todayKeyInTimeZone(state.timezone))
   }
 
   return (
@@ -96,7 +96,7 @@ export function SlipModal({ isOpen, onClose, onConfirm }: SlipModalProps) {
             type="date"
             value={slipDate}
             min={state.quitDate}
-            max={new Date().toISOString().split('T')[0]}
+            max={todayKeyInTimeZone(state.timezone)}
             onChange={(e) => setSlipDate(e.target.value)}
             style={{ width: '100%', padding: 8, borderRadius: 8, border: '1px solid #eee', background: '#fafafa' }}
           />

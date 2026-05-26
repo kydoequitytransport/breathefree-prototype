@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Topbar } from '@/components/layout/Topbar'
 import { useApp } from '@/hooks/useApp'
-import { recomputeRunState, freeTerm, detectBrowserTimeZone } from '@/lib/stateUtils'
+import { recomputeRunState, freeTerm, detectBrowserTimeZone, todayKeyInTimeZone } from '@/lib/stateUtils'
 import { WHY_IDENTITY } from '@/constants'
 import { signOut, clearLocalStorage } from '@/lib/userDataService'
 import type { ViewId } from '@/types'
@@ -68,7 +68,7 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
   }
 
   const handleEditQuitDate = () => {
-    const current = state.quitDate || new Date().toISOString().split('T')[0]
+    const current = state.quitDate || todayKeyInTimeZone(state.timezone)
     setQuitDateDraft(current)
     setIsEditingQuitDate(true)
   }
@@ -85,15 +85,8 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
       return
     }
 
-    const parsed = new Date(val)
-    if (Number.isNaN(parsed.getTime())) {
-      alert('Invalid date.')
-      return
-    }
-
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    if (parsed > today) {
+    const todayStr = todayKeyInTimeZone(state.timezone)
+    if (val > todayStr) {
       alert('Quit date cannot be in the future.')
       return
     }
@@ -212,7 +205,7 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
             <input
               type="date"
               value={quitDateDraft}
-              max={new Date().toISOString().split('T')[0]}
+              max={todayKeyInTimeZone(state.timezone)}
               onChange={(e) => setQuitDateDraft(e.target.value)}
               style={{
                 marginTop: 8,

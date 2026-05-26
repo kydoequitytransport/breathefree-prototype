@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { useApp } from '@/hooks/useApp'
-import { todayKey } from '@/lib/stateUtils'
+import { todayKeyInTimeZone } from '@/lib/stateUtils'
 import { useConfetti } from '@/hooks/useConfetti'
 
 interface CheckinModalProps {
@@ -52,7 +52,7 @@ export function CheckinModal({ isOpen, onClose, onSave }: CheckinModalProps) {
       ...state,
       checkinsLogged: [
         ...(state.checkinsLogged || []),
-        { date: todayKey(), mood, day: dayType, symptoms },
+        { date: todayKeyInTimeZone(state.timezone), mood, day: dayType, symptoms },
       ],
     }
     saveState(updated)
