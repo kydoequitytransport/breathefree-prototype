@@ -50,7 +50,7 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
     if (!dm) return
     setSelectedMilestone({
       key: dm.key,
-      title: dm.label.split(' · ')[1],
+      title: dm.label.split(' · ')[1] || dm.label,
       fact: "You're building the new you, one clean day at a time.",
       emoji: '🌿',
       celebrate: true,

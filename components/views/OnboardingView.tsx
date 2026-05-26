@@ -41,7 +41,6 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   const [showPasswordHint, setShowPasswordHint] = useState(false)
   const [substance, setSubstance] = useState('')
   const [why, setWhy] = useState('')
-  const [whyOther, setWhyOther] = useState('')
   const [quitDate, setQuitDate] = useState(new Date().toISOString().split('T')[0])
   const [dailySpend, setDailySpend] = useState('')
   const [hasRefills, setHasRefills] = useState('')
@@ -60,7 +59,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
       return true
     }
     if (step === 2) {
-      if (!why) { setError('Pick your why.'); return false }
+      if (!why.trim()) { setError('Enter your why.'); return false }
       return true
     }
     if (step === 3) {
@@ -117,7 +116,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
       name: name.trim(),
       email,
       substance: substance as AppState['substance'],
-      why: why === 'other' ? whyOther || 'other' : why,
+      why: why.trim(),
       quitDate,
       dailySpend: parseFloat(dailySpend) || 0,
       hasRefills: hasRefills === 'yes',
@@ -246,37 +245,34 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           <div className="onb-eyebrow">Your why</div>
           <h2>Who are you becoming?</h2>
           <p style={{ marginTop: 8, color: 'var(--mid-brown)' }}>
-            This is the line we'll show you on the hard days. The one you'll see when a craving hits at 10 P.M. Pick the one that means the most.
+            This is the line we&apos;ll show you on hard days. You can tap a suggestion or write your own.
           </p>
           <div className="chips" id="onb-why" style={{ marginTop: 0, flexDirection: 'column', gap: 10 }}>
             {[
-              { value: 'athlete', label: '🫁 To breathe better and live longer' },
-              { value: 'parent', label: '👪 To be there for my family' },
-              { value: 'saver', label: '💸 To stop wasting money on it' },
-              { value: 'control', label: '🏅 To prove I can finally do it' },
-              { value: 'other', label: '✏️ Other' },
+              'I want to breathe better and live longer.',
+              'I want to be there for my family.',
+              'I want to stop wasting money on this.',
+              'I want to prove I can finally do it.',
             ].map((opt) => (
               <button
-                key={opt.value}
+                key={opt}
                 type="button"
-                className={`chip${why === opt.value ? ' selected' : ''}`}
+                className={`chip${why === opt ? ' selected' : ''}`}
                 style={{ width: '100%', justifyContent: 'flex-start', padding: '16px 18px' }}
-                onClick={() => setWhy(opt.value)}
+                onClick={() => setWhy(opt)}
               >
-                {opt.label}
+                {opt}
               </button>
             ))}
-            {why === 'other' && (
-              <div className="field" style={{ marginTop: 0 }}>
-                <input
-                  type="text"
-                  placeholder="Type your own why..."
-                  value={whyOther}
-                  onChange={(e) => setWhyOther(e.target.value)}
-                  style={{ width: '100%', padding: '13px 16px', borderRadius: 999, border: '1.5px solid #ccc', fontSize: 15 }}
-                />
-              </div>
-            )}
+            <div className="field" style={{ marginTop: 0 }}>
+              <input
+                type="text"
+                placeholder="Type your own why..."
+                value={why}
+                onChange={(e) => setWhy(e.target.value)}
+                style={{ width: '100%', padding: '13px 16px', borderRadius: 999, border: '1.5px solid #ccc', fontSize: 15 }}
+              />
+            </div>
           </div>
           {error && <p style={{ color: 'var(--coral)', fontSize: 13 }}>{error}</p>}
           <div className="onb-cta">

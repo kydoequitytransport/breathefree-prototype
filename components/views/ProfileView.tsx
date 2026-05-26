@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Topbar } from '@/components/layout/Topbar'
 import { useApp } from '@/hooks/useApp'
 import { recomputeRunState, freeTerm } from '@/lib/stateUtils'
-import { WHY_IDENTITY, WHY_FIRST_PERSON, RITUAL_DATA } from '@/constants'
+import { WHY_IDENTITY } from '@/constants'
 import { signOut, clearLocalStorage } from '@/lib/userDataService'
 import type { ViewId } from '@/types'
 
@@ -19,6 +19,9 @@ interface ProfileViewPropsExt extends ProfileViewProps {
 
 export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsExt) {
   const { state, saveState, track } = useApp()
+  const [isEditingWhy, setIsEditingWhy] = useState(false)
+  const [whyDraft, setWhyDraft] = useState('')
+  const [whyError, setWhyError] = useState('')
   const [isEditingQuitDate, setIsEditingQuitDate] = useState(false)
   const [quitDateDraft, setQuitDateDraft] = useState('')
 
@@ -27,18 +30,31 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
   const computed = recomputeRunState(state)
   const ft = freeTerm(state)
   const money = Math.round(computed.totalCleanDays * (state.dailySpend || 0))
-  const whyDisplay = WHY_IDENTITY[state.why] || `You're becoming ${ft}.`
+  const whyDisplay = WHY_IDENTITY[state.why] || state.why || `You're becoming ${ft}.`
 
-  const handleEditWhy = () => {
-    const keys = Object.keys(WHY_IDENTITY)
-    const choices = keys.map((k, i) => `${i + 1}. ${WHY_IDENTITY[k]}`).join('\n')
-    const pick = prompt(`Pick a new identity anchor (1-${keys.length}):\n\n${choices}`, String(keys.indexOf(state.why) + 1))
-    const idx = parseInt(pick || '')
-    if (idx >= 1 && idx <= keys.length) {
-      const updated = { ...state, why: keys[idx - 1] }
-      saveState(updated)
-      track('Why Updated', { why: updated.why })
+  const handleStartWhyEdit = () => {
+    setWhyDraft(whyDisplay)
+    setWhyError('')
+    setIsEditingWhy(true)
+  }
+
+  const handleCancelWhyEdit = () => {
+    setIsEditingWhy(false)
+    setWhyDraft('')
+    setWhyError('')
+  }
+
+  const handleSaveWhy = () => {
+    const next = whyDraft.trim()
+    if (!next) {
+      setWhyError('Please enter your why.')
+      return
     }
+    const updated = { ...state, why: next }
+    saveState(updated)
+    track('Why Updated', { why: next })
+    setIsEditingWhy(false)
+    setWhyError('')
   }
 
   const handleLogout = async () => {
@@ -86,12 +102,6 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
     setIsEditingQuitDate(false)
   }
 
-  const substanceText =
-    state.substance === 'both' ? 'smoking and vaping'
-    : state.substance === 'vape' ? 'vaping'
-    : 'smoking'
-  const why = WHY_FIRST_PERSON[state.why] || `I'm becoming ${ft}.`
-
   const quitDateObj = state.quitDate ? new Date(state.quitDate) : null
   const quitDateDisplay = (quitDateObj && !Number.isNaN(quitDateObj.getTime()))
     ? quitDateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
@@ -104,8 +114,38 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
       {/* Why card */}
       <div className="why-card">
         <div className="label">Your why</div>
-        <p className="why-quote" id="profile-why">&quot;{whyDisplay}&quot;</p>
-        <button className="why-edit" onClick={handleEditWhy}>Edit →</button>
+        {!isEditingWhy ? (
+          <>
+            <p className="why-quote" id="profile-why">&quot;{whyDisplay}&quot;</p>
+            <button className="why-edit" onClick={handleStartWhyEdit}>Edit →</button>
+          </>
+        ) : (
+          <>
+            <textarea
+              value={whyDraft}
+              onChange={(e) => { setWhyDraft(e.target.value); if (whyError) setWhyError('') }}
+              rows={3}
+              placeholder="Write your own reason..."
+              style={{
+                marginTop: 6,
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 10,
+                border: '1.5px solid rgba(245,230,210,0.35)',
+                fontFamily: 'inherit',
+                fontSize: 15,
+                color: 'var(--cream)',
+                background: 'rgba(245,230,210,0.08)',
+                resize: 'vertical',
+              }}
+            />
+            {whyError && <div style={{ marginTop: 8, fontSize: 12, color: '#ffd6d1' }}>{whyError}</div>}
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <button className="btn btn--cream" style={{ width: 'auto', padding: '9px 14px' }} onClick={handleSaveWhy}>Save</button>
+              <button className="btn--ghost" style={{ width: 'auto', color: 'var(--faded-cream)' }} onClick={handleCancelWhyEdit}>Cancel</button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Lifetime stats */}

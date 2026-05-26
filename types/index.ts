@@ -11,6 +11,7 @@ export interface AppState {
   activeFlavor: string
   runStartDate: string
   startedAt?: string
+  updatedAt?: string
   currentRun: number
   totalCleanDays: number
   lifetimeCleanDays: number
@@ -54,7 +55,7 @@ export interface EventLogEntry {
 }
 
 export interface Milestone {
-  hours: number
+  day: number; // Added to align with milestone logic
   key: string
   celebrate: boolean
   title: string

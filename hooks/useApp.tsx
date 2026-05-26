@@ -69,6 +69,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (nextState: AppState, nextLog?: EventLogEntry[]) => {
       const deduped = {
         ...nextState,
+        updatedAt: new Date().toISOString(),
         unlockedMilestones: Array.from(new Set(nextState.unlockedMilestones || [])),
       }
       const log = nextLog ?? eventLog
@@ -110,7 +111,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setUserId(uid)
         const { data, error } = await fetchUserData(uid)
         if (data && !error) {
-          const migrated = runMigrations(data.state as AppState)
+          const hydratedState = {
+            ...(data.state as AppState),
+            updatedAt: (data as any).updated_at || (data.state as AppState)?.updatedAt,
+          }
+          const migrated = runMigrations(hydratedState)
           const computed = recomputeRunState(migrated)
           setState(computed)
           setEventLog(data.event_log || [])

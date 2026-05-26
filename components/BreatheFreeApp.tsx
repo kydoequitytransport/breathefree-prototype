@@ -14,7 +14,6 @@ import { KitView } from '@/components/views/KitView'
 import { ProfileView } from '@/components/views/ProfileView'
 import { TriggersView } from '@/components/views/TriggersView'
 import { CravingModal } from '@/components/modals/CravingModal'
-import { BreathingModal } from '@/components/modals/BreathingModal'
 import { SlipModal } from '@/components/modals/SlipModal'
 import { BeatModal } from '@/components/modals/BeatModal'
 import { MilestoneModal } from '@/components/modals/MilestoneModal'
@@ -34,7 +33,6 @@ export default function BreatheFreeApp() {
   const [showCraving, setShowCraving] = useState(false)
   const [showSlip, setShowSlip] = useState(false)
   const [showBeat, setShowBeat] = useState(false)
-  const [showBreathing, setShowBreathing] = useState(false)
   const [activeMilestone, setActiveMilestone] = useState<Milestone | null>(null)
   const [resetOverlay, setResetOverlay] = useState<{ email: string } | null>(null)
 
@@ -221,12 +219,6 @@ export default function BreatheFreeApp() {
         onClose={() => setShowCraving(false)}
         onBeat={handleCravingBeat}
         onSlip={() => { setShowCraving(false); setShowSlip(true) }}
-        onStartBreathing={() => { setShowCraving(false); setShowBreathing(true) }}
-      />
-      <BreathingModal
-        isOpen={showBreathing}
-        onClose={() => setShowBreathing(false)}
-        onComplete={() => toast('Breathing complete. 🌿')}
       />
       <SlipModal
         isOpen={showSlip}

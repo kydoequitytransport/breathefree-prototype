@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { useApp } from '@/hooks/useApp'
 import { RITUAL_DATA } from '@/constants'
-import { freeTerm } from '@/lib/stateUtils'
+import { BreathingModal } from '@/components/modals/BreathingModal'
 
 const CRAVING_TRIGGERS = [
   { value: 'stress', label: 'Stress' },
@@ -21,14 +21,14 @@ interface CravingModalProps {
   onClose: () => void
   onBeat: () => void
   onSlip: () => void
-  onStartBreathing?: () => void
 }
 
-export function CravingModal({ isOpen, onClose, onBeat, onSlip, onStartBreathing }: CravingModalProps) {
+export function CravingModal({ isOpen, onClose, onBeat, onSlip }: CravingModalProps) {
   const { state, saveState, track } = useApp()
   const [step, setStep] = useState<1 | 2>(1)
   const [selectedTrigger, setSelectedTrigger] = useState('')
   const [otherText, setOtherText] = useState('')
+  const [showBreathing, setShowBreathing] = useState(false)
 
   const ritual = RITUAL_DATA[state?.ritual ?? 'necklace'] ?? RITUAL_DATA.necklace
 
@@ -54,12 +54,21 @@ export function CravingModal({ isOpen, onClose, onBeat, onSlip, onStartBreathing
     setStep(2)
   }
 
-  const handleBeat = () => {
-    if (!state) return
+  const resolvedTrigger = () => {
     const trigger = selectedTrigger === 'other' ? otherText.toLowerCase() : selectedTrigger
+    return trigger || 'unknown'
+  }
+
+  const awardBeat = (source: 'direct' | 'guided-breathing') => {
+    if (!state) return
+    const trigger = resolvedTrigger()
     const updated = { ...state, cravingsBeat: (state.cravingsBeat || 0) + 1 }
     saveState(updated)
-    track('Craving Beat', { trigger })
+    track('Craving Beat', { trigger, source })
+  }
+
+  const handleBeat = () => {
+    awardBeat('direct')
     onClose()
     onBeat()
     setStep(1)
@@ -68,6 +77,7 @@ export function CravingModal({ isOpen, onClose, onBeat, onSlip, onStartBreathing
   }
 
   const handleClose = () => {
+    setShowBreathing(false)
     onClose()
     setStep(1)
     setSelectedTrigger('')
@@ -121,24 +131,12 @@ export function CravingModal({ isOpen, onClose, onBeat, onSlip, onStartBreathing
               </div>
             </div>
             <div className="modal-actions">
-              <button
-                className="btn btn--dark"
-                onClick={() => {
-                  onClose()
-                  if (onStartBreathing) onStartBreathing()
-                }}
-              >
-                Start guided breathing →
+              <button className="btn btn--dark" onClick={handleBeat}>
+                I rode it out
               </button>
-
-              <button
-                className="btn--white-outline"
-                style={{ cursor: 'pointer', fontFamily: 'inherit' }}
-                onClick={handleBeat}
-              >
-                I rode it out 💪
+              <button className="btn--ghost" onClick={() => setShowBreathing(true)}>
+                Guided breathing
               </button>
-
               <button className="btn--ghost" style={{ color: 'var(--coral)' }} onClick={() => { handleClose(); onSlip() }}>
                 I slipped
               </button>
@@ -146,6 +144,21 @@ export function CravingModal({ isOpen, onClose, onBeat, onSlip, onStartBreathing
           </div>
         </>
       )}
+
+      <BreathingModal
+        isOpen={showBreathing}
+        urgent
+        onClose={() => setShowBreathing(false)}
+        onRodeItOut={() => {
+          awardBeat('guided-breathing')
+          setShowBreathing(false)
+          onClose()
+          onBeat()
+          setStep(1)
+          setSelectedTrigger('')
+          setOtherText('')
+        }}
+      />
     </Modal>
   )
 }

@@ -42,7 +42,7 @@ export function clearLocalStorage(): void {
 export async function fetchUserData(userId: string) {
   return supabase
     .from('user_data')
-    .select('state, event_log')
+    .select('state, event_log, updated_at')
     .eq('user_id', userId)
     .single()
 }

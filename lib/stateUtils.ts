@@ -1,15 +1,9 @@
-import type { AppState } from '@/types'
+import { MILESTONES } from "../constants";
+import { AppState } from "../types";
 
 export function parseStartMs(dateStr: string): number | null {
-  if (!dateStr) return null
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr)
-  if (m) {
-    const y = Number(m[1]), mo = Number(m[2]) - 1, d = Number(m[3])
-    return Date.UTC(y, mo, d)
-  }
-  const parsed = new Date(dateStr)
-  if (!isNaN(parsed.getTime())) return parsed.getTime()
-  return null
+  const parsed = Date.parse(dateStr);
+  return Number.isNaN(parsed) ? null : parsed;
 }
 
 export function hoursSinceRunStart(state: AppState): number {
@@ -18,6 +12,14 @@ export function hoursSinceRunStart(state: AppState): number {
   const ms = parseStartMs(src)
   if (!ms) return 0
   return (Date.now() - ms) / (1000 * 60 * 60)
+}
+
+export function daysSinceRunStart(state: AppState): number {
+  const src = state.runStartDate || state.quitDate || state.startedAt
+  if (!src) return 0
+  const ms = parseStartMs(src)
+  if (!ms) return 0
+  return Math.floor((Date.now() - ms) / 86400000)
 }
 
 export function daysSinceDate(dateStr: string): number {
@@ -154,4 +156,20 @@ export function getStageLabel(totalCleanDays: number): string {
 
 export function todayKey(): string {
   return new Date().toISOString().slice(0, 10)
+}
+
+export function checkMilestones(state: AppState): string[] {
+  const days = daysSinceRunStart(state)
+  const unlocked = new Set(state.unlockedMilestones || [])
+  const newMilestones: string[] = []
+
+  for (const milestone of MILESTONES) {
+    if (days >= milestone.day && !unlocked.has(milestone.key)) {
+      unlocked.add(milestone.key)
+      if (milestone.celebrate) newMilestones.push(milestone.key)
+    }
+  }
+
+  state.unlockedMilestones = Array.from(unlocked)
+  return newMilestones
 }

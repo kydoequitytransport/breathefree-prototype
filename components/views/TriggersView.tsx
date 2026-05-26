@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Topbar } from '@/components/layout/Topbar'
 import { useApp } from '@/hooks/useApp'
 import { RITUAL_DATA } from '@/constants'
@@ -54,8 +54,9 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
     onToast('Plan removed.')
   }
 
-  // Build trigger map data similar to original index.html
+  // Build trigger map data sorted highest to lowest, based on craving wins.
   const buildTriggerMap = () => {
+    const baselineKeys = ['meal', '10pm', 'stress', 'break', 'social', 'bored', 'morning', 'anxious', 'caught', 'alcohol', 'social pressure']
     const triggerLabels: Record<string, string> = {
       meal: 'After meals',
       '10pm': '10PM',
@@ -70,29 +71,51 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
       alcohol: 'Alcohol',
       'social pressure': 'Social pressure',
     }
-    const preferredOrder = ['meal', '10pm', 'stress', 'break', 'social', 'bored', 'morning', 'anxious', 'caught', 'alcohol', 'social pressure']
-    const counts: Record<string, number> = {}
+    const normalizeTrigger = (raw: string) => {
+      const t = raw.toLowerCase().trim()
+      if (!t) return ''
+      if (t === 'night' || t === 'evening') return '10pm'
+      if (t === 'after meal' || t === 'after meals') return 'meal'
+      if (t === 'work break') return 'break'
+      if (t === 'caught off guard') return 'caught'
+      if (t === 'anxiety') return 'anxious'
+      if (t === 'first coffee') return 'morning'
+      return t
+    }
+    const beatCounts: Record<string, number> = {}
+    const legacyCounts: Record<string, number> = {}
     const log = Array.isArray(eventLog) ? eventLog : []
     for (const ev of log) {
-      const t = ((ev as any).trigger || ev.properties?.trigger || '').toLowerCase().trim()
-      if ((ev.event === 'Slip Logged' || ev.event === 'Craving Beat') && t && t !== 'other') {
-        counts[t] = (counts[t] || 0) + 1
+      const evName = String(ev.event || '').toLowerCase().trim()
+      const t = normalizeTrigger(String((ev as any).trigger || ev.properties?.trigger || ''))
+      if (!t || t === 'other' || t === 'unknown') continue
+      if (evName === 'craving beat') {
+        beatCounts[t] = (beatCounts[t] || 0) + 1
+      }
+      if (evName === 'slip logged') {
+        legacyCounts[t] = (legacyCounts[t] || 0) + 1
       }
     }
-    const allKeys = Array.from(new Set([...preferredOrder, ...Object.keys(counts).filter(k => !preferredOrder.includes(k))]))
+    const hasBeatData = Object.keys(beatCounts).length > 0
+    const counts = hasBeatData ? beatCounts : legacyCounts
+    const keys = Array.from(new Set([...baselineKeys, ...Object.keys(counts)]))
     const maxVal = Math.max(...Object.values(counts), 1)
-    const hasSlip = Object.values(counts).some(v => v > 0)
-    const rows = allKeys.map((key) => {
+    const rows = keys.map((key) => {
       const count = counts[key] || 0
-      const pct = hasSlip && maxVal > 0 ? Math.round((count / maxVal) * 100) : 0
+      const pct = maxVal > 0 ? Math.round((count / maxVal) * 100) : 0
       const label = triggerLabels[key] || (key.charAt(0).toUpperCase() + key.slice(1))
       return { key, label, count, pct }
-    }).filter(r => r.count > 0 || preferredOrder.includes(r.key))
+    }).sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count
+      return a.label.localeCompare(b.label)
+    })
     const topKey = Object.keys(counts).reduce((a, b) => (counts[a] || 0) >= (counts[b] || 0) ? a : b, '')
-    return { rows, hasSlip, topKey }
+    const hasData = Object.keys(counts).length > 0
+    const topLabel = triggerLabels[topKey] || (topKey ? topKey.charAt(0).toUpperCase() + topKey.slice(1) : '')
+    return { rows, hasData, topKey, topLabel }
   }
 
-  const { rows: triggerRows, hasSlip, topKey } = buildTriggerMap()
+  const { rows: triggerRows, hasData, topKey, topLabel } = buildTriggerMap()
   const triggerRef = useRef<HTMLDivElement | null>(null)
 
   const exportNodeAsPNG = async (node: HTMLElement, filename = 'trigger-map.png') => {
@@ -108,41 +131,32 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
     try {
       let html2canvas: any = null
       try {
-        const mod = await import('html2canvas')
-        html2canvas = (mod && (mod as any).default) || mod
-      } catch (e) {
-        // fallback to CDN
-        try {
-          html2canvas = await loadHtml2CanvasFromCdn()
-        } catch (err) {
-          console.error('html2canvas load failed', err)
-        }
+        html2canvas = await loadHtml2CanvasFromCdn()
+      } catch (err) {
+        console.error('html2canvas load failed', err)
       }
 
       if (!html2canvas) {
-        alert('html2canvas not available. Install it or allow CDN fallback.')
+        alert('Image export is currently unavailable.')
         return
       }
 
       const canvas = await html2canvas(node, { scale: window.devicePixelRatio || 1 })
-      return new Promise<void>((resolve) => {
-        canvas.toBlob((b: Blob | null) => {
-          if (!b) {
-            alert('Unable to export image.')
-            return resolve()
-          }
-          const a = document.createElement('a')
-          a.href = URL.createObjectURL(b)
-          a.download = filename
-          document.body.appendChild(a)
-          a.click()
-          a.remove()
-          resolve()
-        }, 'image/png')
-      })
+      canvas.toBlob((b: Blob | null) => {
+        if (!b) {
+          alert('Unable to export image.')
+          return
+        }
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(b)
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+      }, 'image/png')
     } catch (err) {
       console.error('export failed', err)
-      alert('Export failed. Try taking a screenshot or install html2canvas for better export support.')
+      alert('Export failed. Try again in a moment.')
     }
   }
 
@@ -159,7 +173,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
         <div className="section-label">Trigger map</div>
       </div>
       <div id="trigger-map">
-        <div className="trigger-card" ref={triggerRef}>
+          <div className="trigger-card" ref={triggerRef}>
           <h3>Trigger map</h3>
           {triggerRows.map((r) => (
             <div key={r.key} className="trigger-row">
@@ -171,8 +185,8 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
             </div>
           ))}
           <div className="trigger-synth">
-            {hasSlip && topKey ? (
-              <>Your #1 trigger is <b>{topKey}</b>. Your ritual is tuned for it.</>
+            {hasData && topKey ? (
+              <>Your #1 trigger is <b>{topLabel}</b>. Your ritual is tuned for it.</>
             ) : (
               <>Log a craving to see your top trigger.</>
             )}
@@ -180,7 +194,9 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
           <div style={{ marginTop: 12 }}>
             <button className="btn btn--white-outline btn--small" onClick={() => {
               if (triggerRef.current) exportNodeAsPNG(triggerRef.current, 'trigger-map.png')
-            }}>Download trigger map image</button>
+            }}>
+              Download trigger map image
+            </button>
           </div>
         </div>
       </div>
@@ -189,40 +205,27 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
         <div className="section-label">Your rituals</div>
       </div>
       <div id="rituals-list">
-        <div className="ritual-card ritual-card--default">
-          <div className="ritual-icon-box">{RITUAL_DATA[state.ritual || 'necklace'].icon}</div>
-          <div className="ritual-body">
-            <div className="ritual-name">BreatheFree necklace (Primary)</div>
-            <div className="ritual-sub">Pull out and breathe through the urge</div>
-          </div>
-          <div className="pill-default">Default</div>
-        </div>
         <div className="ritual-card">
-          <div className="ritual-icon-box">🍃</div>
           <div className="ritual-body">
-            <div className="ritual-name">Flavor refills (Backup)</div>
-            <div className="ritual-sub">When you need more support</div>
+            <div className="ritual-name">{RITUAL_DATA[state.ritual || 'necklace'].name}</div>
+            <div className="ritual-sub">Your main craving tool</div>
           </div>
         </div>
         <div className="ritual-card">
-          <div className="ritual-icon-box">💨</div>
+          <div className="ritual-body">
+            <div className="ritual-name">Flavor refills</div>
+            <div className="ritual-sub">Backup · after meals</div>
+          </div>
+        </div>
+        <div className="ritual-card">
           <div className="ritual-body">
             <div className="ritual-name">5 slow breaths</div>
             <div className="ritual-sub">Anywhere, anytime</div>
           </div>
         </div>
         <button className="add-link" onClick={() => onToast('Add ritual coming soon')}>+ Add a ritual</button>
-        
-        <div className="section-row" style={{ marginTop: 18 }}>
-          <div className="section-label">IF / THEN PLAN</div>
-        </div>
-        <div className="callout" style={{ marginTop: 8, marginBottom: 12 }}>
-          <p>If a craving hits, then I&apos;ll pull out my necklace and take 6 slow breaths.</p>
-          <a className="callout-link" href="#" onClick={(e) => { e.preventDefault(); onToast('Edit plan coming soon') }}>Edit my plan →</a>
-        </div>
         {(state.customRituals || []).map((r, i) => (
           <div key={i} className="ritual-card">
-            <div className="ritual-icon-box">✨</div>
             <div className="ritual-body"><div className="ritual-name">{r.name}</div><div className="ritual-sub">{r.when || 'Anytime'}</div></div>
             <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mid-brown)', fontSize: 20, padding: '0 6px' }} onClick={() => {
               const updated = { ...state, customRituals: (state.customRituals || []).filter((_, idx) => idx !== i) }

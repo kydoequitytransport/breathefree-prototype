@@ -10,6 +10,7 @@ import {
   getStageLabel,
   sameDay,
   hoursSinceRunStart,
+  parseStartMs,
   interpolate,
 } from '@/lib/stateUtils'
 import { WHY_IDENTITY, RITUAL_DATA, TRIGGER_LABELS, MILESTONES, DAY_MILESTONES, DAY_MILESTONE_MAP } from '@/constants'
@@ -28,11 +29,19 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
   const checkForNewMilestones = useCallback(() => {
     if (!state) return
     const hours = hoursSinceRunStart(state)
+    const days = hours / 24
+    const runStartMs = parseStartMs(state.runStartDate || state.quitDate || state.startedAt || '')
+    const updatedAtMs = state.updatedAt ? new Date(state.updatedAt).getTime() : NaN
+    const previousHours = runStartMs && !Number.isNaN(updatedAtMs)
+      ? Math.max(0, (updatedAtMs - runStartMs) / (1000 * 60 * 60))
+      : hours
+    const previousDays = previousHours / 24
     const computed = recomputeRunState(state)
     const cumDays = computed.currentRun || 0
     const unlocked = [...(state.unlockedMilestones || [])]
     let changed = false
     let celebrateKey: string | null = null
+    let fallbackCelebrateKey: string | null = null
 
     // First: unlock day-based milestones (map to MILESTONES keys)
     for (const dm of DAY_MILESTONES) {
@@ -43,22 +52,27 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
       unlocked.push(mapped)
       changed = true
       const m = MILESTONES.find((x) => x.key === mapped)
-      if (m?.celebrate && !celebrateKey) celebrateKey = m.key
+      if (!m?.celebrate) continue
+      if (m.day > previousDays && m.day <= days) celebrateKey = m.key
+      else fallbackCelebrateKey = m.key
     }
 
     // Then: existing hours-based milestones (keep previous behavior for non-day items)
     for (const m of MILESTONES) {
-      if (hours < m.hours) break
+      if (days < m.day) break
       if (unlocked.includes(m.key)) continue
       unlocked.push(m.key)
       changed = true
-      if (m.celebrate && !celebrateKey) celebrateKey = m.key
+      if (!m.celebrate) continue
+      if (m.day > previousDays && m.day <= days) celebrateKey = m.key
+      else fallbackCelebrateKey = m.key
     }
 
     if (changed) {
+      const modalKey = celebrateKey || fallbackCelebrateKey
       saveState({ ...state, unlockedMilestones: unlocked })
-      if (celebrateKey) {
-        setTimeout(() => onMilestoneUnlock(celebrateKey!), 600)
+      if (modalKey) {
+        setTimeout(() => onMilestoneUnlock(modalKey), 600)
       }
     }
   }, [state, saveState, onMilestoneUnlock])
@@ -75,7 +89,7 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
   const money = Math.round(computed.totalCleanDays * (state.dailySpend || 0))
   const ritual = RITUAL_DATA[state.ritual] ?? RITUAL_DATA.necklace
   const triggerLabel = TRIGGER_LABELS[state.trigger] || ''
-  const identityLine = WHY_IDENTITY[state.why] || `You're becoming ${ft}.`
+  const identityLine = WHY_IDENTITY[state.why] || state.why || `You're becoming ${ft}.`
 
   // Week strip
   const today = new Date()
@@ -156,20 +170,29 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
         })}
       </div>
 
-      {/* Today's ritual */}
+      {/* IF / THEN plan */}
       <div className="section-row">
-        <div className="section-label">Today&apos;s ritual</div>
-        <div className="section-label" id="ritual-trigger-label" style={{ color: 'var(--mid-brown)' }}>{triggerLabel}</div>
+        <div className="section-label">IF / THEN plan</div>
+        <button className="link" onClick={() => onNavigate('triggers')}>Edit →</button>
       </div>
-      <div className="ritual-row" onClick={() => {}}>
-        <div className="ritual-icon-box">
-          <LeafIcon className="leaf-svg" />
-        </div>
-        <div className="ritual-body">
-          <div className="ritual-name" id="ritual-name">{ritual.name}</div>
-          <div className="ritual-sub" id="ritual-when">Your {triggerLabel || 'craving'} ritual</div>
-        </div>
-        <span className="chevron">›</span>
+      <div className="callout" style={{ marginBottom: 8 }}>
+        {state.riskyDayPlans && state.riskyDayPlans.length > 0 ? (
+          <>
+            <p>
+              <strong>If</strong> {state.riskyDayPlans[0].event || 'I hit a risky moment'}, <strong>then</strong> {state.riskyDayPlans[0].plan || `I use ${ritual.name.toLowerCase()}.`}
+            </p>
+            <p style={{ marginTop: 8, fontSize: 12, color: 'var(--mid-brown)' }}>
+              Trigger focus: {triggerLabel || 'Any craving moment'}
+            </p>
+          </>
+        ) : (
+          <>
+            <p><strong>If</strong> I feel a craving, <strong>then</strong> I do 5 slow breaths and ride the wave for 90 seconds.</p>
+            <a className="callout-link" href="#" onClick={(e) => { e.preventDefault(); onNavigate('triggers') }}>
+              Create my plan →
+            </a>
+          </>
+        )}
       </div>
 
       {/* Refills upsell */}
@@ -202,16 +225,6 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
         <button className="slip-link" onClick={onSlip}>I slipped</button>
       </div>
 
-      {/* Craving + slip CTAs */}
-      <div style={{ marginTop: 24 }}>
-        <button className="btn btn--coral" onClick={onCraving}>
-          <svg className="bolt" viewBox="0 0 24 24" fill="white">
-            <polygon points="13,2 4,14 12,14 11,22 20,10 12,10" />
-          </svg>
-          Craving now
-        </button>
-        <button className="slip-link" onClick={onSlip}>I slipped</button>
-      </div>
     </div>
   )
 }

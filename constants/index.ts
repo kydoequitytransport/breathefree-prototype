@@ -1,21 +1,16 @@
 import type { Milestone, Product, Flavor } from '@/types'
 
 export const MILESTONES: Milestone[] = [
-  { hours: 0.33, key: '20min', celebrate: false, title: 'Heart rate drops', emoji: '❤️', fact: 'Your heart rate and blood pressure just dropped back to normal. This is what the first 20 nicotine-free minutes feel like — and you did it.' },
-  { hours: 8, key: '8hr', celebrate: false, title: 'Carbon monoxide halved', emoji: '🫁', fact: 'Half the carbon monoxide you were breathing is already gone. Your blood is carrying oxygen again, not smoke.' },
-  { hours: 24, key: '24hr', celebrate: true, title: '24 hours clean', emoji: '🌅', fact: 'A full day. Your heart attack risk already dropped. The hardest part of day one is behind you — the brain is starting to adjust.' },
-  { hours: 48, key: '48hr', celebrate: false, title: 'Taste & smell waking up', emoji: '👃', fact: 'Nerve endings in your nose and mouth are regrowing. Food is about to taste like food again.' },
-  { hours: 72, key: '72hr', celebrate: true, title: '72 hours — nicotine is fully out', emoji: '💨', fact: 'All nicotine is now gone from your body. Cravings from here are habit loops, not chemistry — and you already have rituals for those.' },
-  { hours: 168, key: '1wk', celebrate: true, title: '1 week clean', emoji: '🌱', fact: 'A full week. Your body is adjusting. Sleep is starting to normalize. You got through the hardest week — it only gets lighter from here.' },
-  { hours: 336, key: '2wk', celebrate: true, title: '2 weeks — circulation back', emoji: '🩸', fact: 'Your circulation has measurably improved. Walking up stairs is getting easier. Lung function is climbing.' },
-  { hours: 720, key: '1mo', celebrate: true, title: '1 month — coughing fades', emoji: '🌿', fact: 'Cilia in your lungs are regrowing. Coughing and shortness of breath are dropping. Your immune system is firing properly again.' },
-  { hours: 2160, key: '3mo', celebrate: true, title: '3 months — lungs stronger', emoji: '💪', fact: 'Lung function up 30%. You breathe deeper without thinking about it. This is identity-level change.' },
-  { hours: 4320, key: '6mo', celebrate: true, title: "6 months — you're {nonUser}", emoji: '🏆', fact: "Your relapse risk has dropped dramatically. You're not \"quitting\" anymore — you're someone who {negVerb}." },
-  { hours: 8760, key: '1yr', celebrate: true, title: '1 year — heart disease risk halved', emoji: '🫀', fact: 'Your risk of coronary heart disease is half what it was a year ago. Half. You did that with breath and rituals.' },
+  { day: 1, key: '1d', celebrate: true, title: '1 day clean', emoji: '🌅', fact: 'A full day. Your heart attack risk already dropped. The hardest part of day one is behind you — the brain is starting to adjust.' },
+  { day: 7, key: '1wk', celebrate: true, title: '1 week clean', emoji: '🌱', fact: 'A full week. Your body is adjusting. Sleep is starting to normalize. You got through the hardest week — it only gets lighter from here.' },
+  { day: 14, key: '2wk', celebrate: true, title: '2 weeks — circulation back', emoji: '🪷', fact: 'Your circulation has measurably improved. Walking up stairs is getting easier. Lung function is climbing.' },
+  { day: 30, key: '1mo', celebrate: true, title: '1 month — coughing fades', emoji: '🌿', fact: 'Cilia in your lungs are regrowing. Coughing and shortness of breath are dropping. Your immune system is firing properly again.' },
+  { day: 90, key: '3mo', celebrate: true, title: '3 months — lungs stronger', emoji: '💪', fact: 'Lung function up 30%. You breathe deeper without thinking about it. This is identity-level change.' },
+  { day: 180, key: '6mo', celebrate: true, title: "6 months — you're {nonUser}", emoji: '🏆', fact: "Your relapse risk has dropped dramatically. You're not \"quitting\" anymore — you're someone who {negVerb}." },
+  { day: 365, key: '1yr', celebrate: true, title: '1 year — heart disease risk halved', emoji: '🛟', fact: 'Your risk of coronary heart disease is half what it was a year ago. Half. You did that with breath and rituals.' },
 ]
 
 export const DAY_MILESTONES = [
-  { day: 1,   key: 'day1',   label: 'Day 1' },
   { day: 7,   key: 'day7',   label: '1 week' },
   { day: 14,  key: 'day14',  label: '2 weeks' },
   { day: 30,  key: 'day30',  label: '1 month' },
@@ -28,7 +23,7 @@ export const DAY_MILESTONES = [
 ]
 
 export const DAY_MILESTONE_MAP: Record<string, string | null> = {
-  day1: '24hr', day7: '1wk', day14: '2wk', day30: '1mo',
+  day7: '1wk', day14: '2wk', day30: '1mo',
   day60: null, day90: '3mo', day120: null, day180: '6mo',
   day270: null, day365: '1yr',
 }
