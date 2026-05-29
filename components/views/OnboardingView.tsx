@@ -13,6 +13,13 @@ interface OnboardingViewProps {
 }
 
 const STEPS = 5
+const WHY_OPTIONS = [
+  'I want to breathe better and live longer.',
+  'I want to be there for my family.',
+  'I want to stop wasting money on this.',
+  'I want to prove I can finally do it.',
+] as const
+const WHY_OTHER = 'other'
 
 function ProgressDots({ current }: { current: number }) {
   return (
@@ -40,13 +47,16 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   const [password, setPassword] = useState('')
   const [showPasswordHint, setShowPasswordHint] = useState(false)
   const [substance, setSubstance] = useState('')
-  const [why, setWhy] = useState('')
+  const [selectedWhy, setSelectedWhy] = useState('')
+  const [customWhy, setCustomWhy] = useState('')
   const [quitDate, setQuitDate] = useState(todayKeyInTimeZone(detectBrowserTimeZone()))
   const [dailySpend, setDailySpend] = useState('')
   const [hasRefills, setHasRefills] = useState('')
   const [trigger, setTrigger] = useState('')
   const [error, setError] = useState('')
   const [showBreath, setShowBreath] = useState(false)
+
+  const why = selectedWhy === WHY_OTHER ? customWhy.trim() : selectedWhy
 
   const goNext = () => setStep((s) => Math.min(s + 1, STEPS - 1))
   const goBack = () => setStep((s) => Math.max(s - 1, 0))
@@ -253,31 +263,36 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
             This is the line we&apos;ll show you on hard days. You can tap a suggestion or write your own.
           </p>
           <div className="chips" id="onb-why" style={{ marginTop: 0, flexDirection: 'column', gap: 10 }}>
-            {[
-              'I want to breathe better and live longer.',
-              'I want to be there for my family.',
-              'I want to stop wasting money on this.',
-              'I want to prove I can finally do it.',
-            ].map((opt) => (
+            {WHY_OPTIONS.map((opt) => (
               <button
                 key={opt}
                 type="button"
-                className={`chip${why === opt ? ' selected' : ''}`}
+                className={`chip${selectedWhy === opt ? ' selected' : ''}`}
                 style={{ width: '100%', justifyContent: 'flex-start', padding: '16px 18px' }}
-                onClick={() => setWhy(opt)}
+                onClick={() => setSelectedWhy(opt)}
               >
                 {opt}
               </button>
             ))}
-            <div className="field" style={{ marginTop: 0 }}>
-              <input
-                type="text"
-                placeholder="Type your own why..."
-                value={why}
-                onChange={(e) => setWhy(e.target.value)}
-                style={{ width: '100%', padding: '13px 16px', borderRadius: 999, border: '1.5px solid #ccc', fontSize: 15 }}
-              />
-            </div>
+            <button
+              type="button"
+              className={`chip${selectedWhy === WHY_OTHER ? ' selected' : ''}`}
+              style={{ width: '100%', justifyContent: 'flex-start', padding: '16px 18px' }}
+              onClick={() => setSelectedWhy(WHY_OTHER)}
+            >
+              Others
+            </button>
+            {selectedWhy === WHY_OTHER && (
+              <div className="field" style={{ marginTop: 0 }}>
+                <input
+                  type="text"
+                  placeholder="Type your own why..."
+                  value={customWhy}
+                  onChange={(e) => setCustomWhy(e.target.value)}
+                  style={{ width: '100%', padding: '13px 16px', borderRadius: 999, border: '1.5px solid #ccc', fontSize: 15 }}
+                />
+              </div>
+            )}
           </div>
           {error && <p style={{ color: 'var(--coral)', fontSize: 13 }}>{error}</p>}
           <div className="onb-cta">

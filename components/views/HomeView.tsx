@@ -9,11 +9,9 @@ import {
   freeTerm,
   getStageLabel,
   sameDay,
-  hoursSinceRunStart,
-  parseStartMs,
   interpolate,
 } from '@/lib/stateUtils'
-import { WHY_IDENTITY, RITUAL_DATA, TRIGGER_LABELS, MILESTONES, DAY_MILESTONES, DAY_MILESTONE_MAP } from '@/constants'
+import { WHY_IDENTITY, RITUAL_DATA, TRIGGER_LABELS, MILESTONES } from '@/constants'
 import type { ViewId } from '@/types'
 
 interface HomeViewProps {
@@ -28,49 +26,30 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
 
   const checkForNewMilestones = useCallback(() => {
     if (!state) return
-    const hours = hoursSinceRunStart(state)
-    const days = hours / 24
-    const runStartMs = parseStartMs(state.runStartDate || state.quitDate || state.startedAt || '')
-    const updatedAtMs = state.updatedAt ? new Date(state.updatedAt).getTime() : NaN
-    const previousHours = runStartMs && !Number.isNaN(updatedAtMs)
-      ? Math.max(0, (updatedAtMs - runStartMs) / (1000 * 60 * 60))
-      : hours
-    const previousDays = previousHours / 24
     const computed = recomputeRunState(state)
-    const cumDays = computed.currentRun || 0
-    const unlocked = [...(state.unlockedMilestones || [])]
+    const currentRun = computed.currentRun || 0
+    const previousRun = Math.max(0, state.currentRun || 0)
+    const unlocked = new Set(state.unlockedMilestones || [])
+    const newlyUnlockedCelebrations: string[] = []
     let changed = false
-    let celebrateKey: string | null = null
-    let fallbackCelebrateKey: string | null = null
 
-    // First: unlock day-based milestones (map to MILESTONES keys)
-    for (const dm of DAY_MILESTONES) {
-      if (cumDays < dm.day) break
-      const mapped = DAY_MILESTONE_MAP[dm.key]
-      if (!mapped) continue
-      if (unlocked.includes(mapped)) continue
-      unlocked.push(mapped)
-      changed = true
-      const m = MILESTONES.find((x) => x.key === mapped)
-      if (!m?.celebrate) continue
-      if (m.day > previousDays && m.day <= days) celebrateKey = m.key
-      else fallbackCelebrateKey = m.key
-    }
-
-    // Then: existing hours-based milestones (keep previous behavior for non-day items)
+    // Unlock milestone keys based on consecutive clean days (current run).
     for (const m of MILESTONES) {
-      if (days < m.day) break
-      if (unlocked.includes(m.key)) continue
-      unlocked.push(m.key)
+      if (currentRun < m.day) break
+      if (unlocked.has(m.key)) continue
+      unlocked.add(m.key)
       changed = true
-      if (!m.celebrate) continue
-      if (m.day > previousDays && m.day <= days) celebrateKey = m.key
-      else fallbackCelebrateKey = m.key
+      if (m.celebrate) newlyUnlockedCelebrations.push(m.key)
     }
 
     if (changed) {
-      const modalKey = celebrateKey || fallbackCelebrateKey
-      saveState({ ...state, unlockedMilestones: unlocked })
+      const crossedNow = newlyUnlockedCelebrations.filter((key) => {
+        const milestone = MILESTONES.find((m) => m.key === key)
+        return !!milestone && milestone.day > previousRun
+      })
+      const modalKey = crossedNow[crossedNow.length - 1] || newlyUnlockedCelebrations[newlyUnlockedCelebrations.length - 1] || null
+
+      saveState({ ...state, ...computed, unlockedMilestones: Array.from(unlocked) })
       if (modalKey) {
         setTimeout(() => onMilestoneUnlock(modalKey), 600)
       }
