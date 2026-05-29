@@ -182,7 +182,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           <p style={{ marginTop: 14, color: 'var(--mid-brown)' }}>
             Two minutes to set up. Slips don't erase your progress.
           </p>
-          <div className="onb-cta">
+          <div className="onb-cta" style={{ marginTop: 40 }}>
             <button type="button" className="btn btn--dark" onClick={goNext}>Let&apos;s start →</button>
           </div>
         </div>
@@ -249,7 +249,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           <ProgressDots current={2} />
           <div className="onb-eyebrow">Your why</div>
           <h2>Who are you becoming?</h2>
-          <p style={{ marginTop: 8, color: 'var(--mid-brown)' }}>
+          <p style={{ marginTop: 8, color: 'var(--mid-brown)', marginBottom: 12 }}>
             This is the line we&apos;ll show you on hard days. You can tap a suggestion or write your own.
           </p>
           <div className="chips" id="onb-why" style={{ marginTop: 0, flexDirection: 'column', gap: 10 }}>
