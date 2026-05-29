@@ -120,7 +120,7 @@ export default function BreatheFreeApp() {
   }
 
   const handleSlipConfirm = () => {
-    toast('Plan locked in. Current run reset — everything else is still yours.')
+    // removed plan locked in toast per feedback
   }
 
   const handleLogout = () => {

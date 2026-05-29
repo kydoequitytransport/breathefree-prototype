@@ -15,7 +15,7 @@ interface BreathingModalProps {
 
 type BreathPhase = 'ready' | 'inhale' | 'hold' | 'exhale'
 
-const PLACEHOLDER_SOUNDTRACK = '/audio/meditation-instrumental-placeholder.mp3'
+const PLACEHOLDER_SOUNDTRACK = '/audio/avanti.mp3'
 
 export function BreathingModal({ isOpen, onClose, urgent = false, onComplete, onRodeItOut }: BreathingModalProps) {
   const { state, saveState, track } = useApp()
@@ -156,7 +156,6 @@ export function BreathingModal({ isOpen, onClose, urgent = false, onComplete, on
         <button className="btn--ghost" type="button" onClick={() => setSoundMuted((v) => !v)}>
           {soundMuted ? '🔇 Unmute soundtrack' : '🔈 Mute soundtrack'}
         </button>
-        <div style={{ fontSize: 11, color: 'var(--mid-brown)' }}>Tam track placeholder is wired at /public/audio/meditation-instrumental-placeholder.mp3</div>
       </div>
       <div className="modal-actions">
         {!running && (

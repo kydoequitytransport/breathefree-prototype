@@ -112,6 +112,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   }
 
   const handleFinish = async () => {
+    const nowIso = new Date().toISOString()
     const baseState: AppState = {
       name: name.trim(),
       email,
@@ -122,7 +123,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
       dailySpend: parseFloat(dailySpend) || 0,
       hasRefills: hasRefills === 'yes',
       trigger: trigger || 'stress',
-      ritual: hasRefills === 'yes' ? 'refills' : 'necklace',
+      ritual: 'necklace',
       activeFlavor: 'Cool Mint',
       runStartDate: quitDate,
       startedAt: new Date().toISOString(),
@@ -136,7 +137,10 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
       unlockedMilestones: [],
       checkinsLogged: [],
       riskyDayPlans: [],
-      customRituals: [],
+      customRituals: [
+        { name: 'Flavor refills', when: 'Backup · after meals', createdAt: nowIso },
+        { name: '5 slow breaths', when: 'Anywhere, anytime', createdAt: nowIso },
+      ],
       customTriggers: [],
       waves: [],
     }
@@ -332,14 +336,13 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           <div className="field" style={{ marginTop: 20 }}>
             <label>Do you also have flavor refills?</label>
             <div className="chips" id="onb-has-refills">
-              {[{ value: 'yes', label: "Yes, I've got refills" }, { value: 'no', label: 'Not yet — necklace only' }].map((opt) => (
+              {[{ value: 'yes', label: "Yes, I've got refills" }, { value: 'no', label: 'Not yet - necklace only' }].map((opt) => (
                 <button key={opt.value} type="button" className={`chip${hasRefills === opt.value ? ' selected' : ''}`} onClick={() => setHasRefills(opt.value)}>
                   {opt.label}
                 </button>
               ))}
             </div>
-            <div className="muted" style={{ marginTop: 8 }}>Natural flavored refills. Give cravings something to taste, no nicotine.</div>
-          </div>
+           </div>
           <div className="field" style={{ marginTop: 20 }}>
             <label>When does your hardest craving usually hit?</label>
             <div className="chips" id="onb-trigger">
@@ -356,7 +359,6 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                 </button>
               ))}
             </div>
-            <div className="muted" style={{ marginTop: 8 }}>We&apos;ll set a gentle reminder for this window.</div>
           </div>
           <div className="onb-cta">
             <button className="btn btn--dark" onClick={handleNext}>Start my journey →</button>

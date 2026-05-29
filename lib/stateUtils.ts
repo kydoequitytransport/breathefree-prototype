@@ -169,7 +169,7 @@ export function runMigrations(state: AppState): AppState {
 export function freeTerm(state?: AppState | null): string {
   if (!state) return 'nicotine-free'
   if (state.substance === 'vape') return 'vape-free'
-  if (state.substance === 'smoke') return 'smoke-free'
+  if (state.substance === 'smoke') return 'nicotine-free'
   return 'nicotine-free'
 }
 

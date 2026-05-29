@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Topbar } from '@/components/layout/Topbar'
 import { LeafIcon } from '@/components/ui/LeafIcon'
 import { useApp } from '@/hooks/useApp'
@@ -22,7 +22,6 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(new Date().getMonth())
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null)
-  const milestoneRef = useRef<HTMLDivElement | null>(null)
 
   if (!state) return null
 
@@ -59,49 +58,8 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
     })
   }
 
-  const firstLockedIdx = DAY_MILESTONES.findIndex((m) => m.day > cumDays)
-
-  const exportNodeAsPNG = async (node: HTMLElement, filename = 'milestones.png') => {
-    const loadHtml2CanvasFromCdn = () => new Promise<any>((resolve, reject) => {
-      if (typeof window !== 'undefined' && (window as any).html2canvas) return resolve((window as any).html2canvas)
-      const s = document.createElement('script')
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
-      s.onload = () => resolve((window as any).html2canvas)
-      s.onerror = reject
-      document.head.appendChild(s)
-    })
-
-    try {
-      let html2canvas: any = null
-      try {
-        html2canvas = await loadHtml2CanvasFromCdn()
-      } catch (err) {
-        console.error('html2canvas load failed', err)
-      }
-
-      if (!html2canvas) {
-        alert('Image export is currently unavailable.')
-        return
-      }
-
-      const canvas = await html2canvas(node, { scale: window.devicePixelRatio || 1 })
-      canvas.toBlob((b: Blob | null) => {
-        if (!b) {
-          alert('Unable to export image.')
-          return
-        }
-        const a = document.createElement('a')
-        a.href = URL.createObjectURL(b)
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-      }, 'image/png')
-    } catch (err) {
-      console.error('export failed', err)
-      alert('Export failed. Try again in a moment.')
-    }
-  }
+  const leftMilestones = DAY_MILESTONES.filter((m) => m.day <= 60)
+  const rightMilestones = DAY_MILESTONES.filter((m) => m.day > 60)
 
   return (
     <div className="view active" id="calendar" style={{ padding: '0 22px 24px' }}>
@@ -168,54 +126,44 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
       </div>
 
       {/* Milestones */}
-      <div className="milestones-section" id="milestone-map" ref={milestoneRef}>
+      <div className="milestones-section" id="milestone-map">
         <div className="ms-section-label">Your milestones</div>
-        <div className="ms-list">
-          {DAY_MILESTONES.map((m, i) => {
-            const earned = m.day <= cumDays
-            const isNext = !earned && i === firstLockedIdx
-            if (isNext) {
-              const daysAway = m.day - cumDays
-              return (
-                <div key={m.key} className="ms-next-card" onClick={() => openDayMilestone(m.key)}>
-                  <div className="ms-next-left">
-                    <LeafIcon className="ms-next-leaf" />
-                    <span className="ms-next-text">{m.label}</span>
-                  </div>
-                  <span className="ms-next-badge">{daysAway} day{daysAway === 1 ? '' : 's'}</span>
-                </div>
-              )
-            }
-            if (earned) {
-              return (
-                <div key={m.key} className="ms-row ms-row--earned" onClick={() => openDayMilestone(m.key)}>
-                  <div className="ms-row-left">
-                    <svg className="ms-icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <span className="ms-row-text">{m.label}</span>
-                  </div>
-                  <span className="ms-row-right">Earned</span>
-                </div>
-              )
-            }
-            return (
-              <div key={m.key} className="ms-row ms-row--locked">
-                <div className="ms-row-left">
-                  <div className="ms-icon-circle" />
-                  <span className="ms-row-text">{m.label}</span>
-                </div>
-              </div>
-            )
-          })}
+        <div className="ms-card">
+          <div className="ms-grid">
+            <div className="ms-col">
+              {leftMilestones.map((m) => {
+                const earned = m.day <= cumDays
+                return (
+                  <button
+                    key={m.key}
+                    type="button"
+                    className={`ms-item${earned ? ' ms-item--earned' : ' ms-item--locked'}`}
+                    onClick={() => earned && openDayMilestone(m.key)}
+                  >
+                    {earned ? <LeafIcon className="ms-item-icon" /> : <span className="ms-item-circle" />}
+                    <span className="ms-item-text">{m.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="ms-col">
+              {rightMilestones.map((m) => {
+                const earned = m.day <= cumDays
+                return (
+                  <button
+                    key={m.key}
+                    type="button"
+                    className={`ms-item${earned ? ' ms-item--earned' : ' ms-item--locked'}`}
+                    onClick={() => earned && openDayMilestone(m.key)}
+                  >
+                    {earned ? <LeafIcon className="ms-item-icon" /> : <span className="ms-item-circle" />}
+                    <span className="ms-item-text">{m.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
-      </div>
-      <div style={{ marginTop: 12 }}>
-        <button className="btn btn--white-outline btn--small" onClick={() => {
-          if (milestoneRef.current) exportNodeAsPNG(milestoneRef.current, 'milestones.png')
-        }}>
-          Download milestone image
-        </button>
       </div>
 
       <MilestoneModal

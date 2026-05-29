@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { useApp } from '@/hooks/useApp'
+import { WHY_IDENTITY } from '@/constants'
 import { freeTerm, recomputeRunState, toYMD, parseStartMs, todayKeyInTimeZone } from '@/lib/stateUtils'
 
 const SLIP_TRIGGERS = [
@@ -33,6 +34,7 @@ export function SlipModal({ isOpen, onClose, onConfirm }: SlipModalProps) {
   const ft = freeTerm(state)
   const lifetimeDays = computed.totalCleanDays
   const money = Math.round(computed.totalCleanDays * (state.dailySpend || 0))
+  const whyLine = WHY_IDENTITY[state.why] || state.why || `You're becoming ${ft}.`
 
   const handleBounceBack = () => {
     let slipTrigger = selectedTrigger
@@ -130,15 +132,15 @@ export function SlipModal({ isOpen, onClose, onConfirm }: SlipModalProps) {
         <p style={{ fontSize: 14, color: 'var(--brown-text)', lineHeight: 1.7 }}>
           ✓ Your lifetime clean days (<strong id="slip-lifetime">{lifetimeDays}</strong>)<br />
           ✓ Your money saved ($<strong id="slip-money">{money}</strong>)<br />
-          ✓ Your identity — you&apos;re still becoming <span id="slip-free-term">{ft}</span><br />
-          ✓ Your rituals, your why
+          ✓ Your identity - you&apos;re still becoming <span id="slip-free-term">{ft}</span><br />
+          ✓ Your why: {whyLine}
         </p>
-        <p style={{ fontSize: 13, color: 'var(--mid-brown)', marginTop: 10 }}>Only your current run restarts at 0. Everything else you earned is yours.</p>
+        <p style={{ fontSize: 13, color: 'var(--mid-brown)', marginTop: 10 }}>Everything else you earned is yours.</p>
       </div>
 
       <div className="modal-actions">
         <button className="btn btn--dark" onClick={handleBounceBack}>
-          Lock in my plan for next time →
+          Back to my progress
         </button>
       </div>
     </Modal>

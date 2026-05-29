@@ -18,9 +18,6 @@ export function BeatModal({ isOpen, onClose }: BeatModalProps) {
       <p id="beat-sub">
         Every craving you beat is evidence you&apos;re becoming {ft}. Your brain just wrote over an old pathway.
       </p>
-      <div style={{ marginTop: 20, background: 'var(--pill-bg)', padding: 16, borderRadius: 'var(--radius-callout)', fontSize: 14, color: 'var(--brown-text)' }}>
-        That&apos;s real proof your body is healing — not a number on a streak.
-      </div>
       <div style={{ marginTop: 12, fontSize: 13, color: 'var(--mid-brown)' }}>
         Cravings beaten: <strong id="beat-count">{state?.cravingsBeat || 0}</strong>
       </div>

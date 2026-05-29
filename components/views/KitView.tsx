@@ -22,10 +22,10 @@ export function KitView({ onNavigate }: KitViewProps) {
       <Topbar onProfileClick={() => onNavigate('profile')} />
 
       <div className="page-header">
-        <h1 className="page-title">Add to your kit</h1>
-        <div style={{ fontSize: 40, fontWeight: 500, color: 'var(--brown-text)', marginTop: 8, lineHeight: 1.2 }}>
-          Looking for more support?
-        </div>
+        <h1 className="page-title" style={{ fontSize: 20, fontWeight: 500, lineHeight: 1.15 }}>Your kit</h1>
+        <p className="page-intro" style={{ fontSize: 16, fontWeight: 400, color: 'var(--mid-brown)', marginTop: 8, lineHeight: 1.4, maxWidth: 340 }}>
+          What you've got, plus what's next. Every product here exists for a specific moment on your quit journey.
+        </p>
       </div>
 
       <div className="section-row">

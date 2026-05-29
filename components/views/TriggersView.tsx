@@ -21,6 +21,9 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
   const [riskyDate, setRiskyDate] = useState('')
   const [riskyPlan, setRiskyPlan] = useState('')
   const [showRiskyForm, setShowRiskyForm] = useState(false)
+  const [showAddRitualForm, setShowAddRitualForm] = useState(false)
+  const [ritualNameDraft, setRitualNameDraft] = useState('')
+  const [ritualWhenDraft, setRitualWhenDraft] = useState('')
 
   if (!state) return null
 
@@ -49,6 +52,41 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
     }
     saveState(updated)
     onToast('Plan removed.')
+  }
+
+  const addRitual = () => {
+    const name = ritualNameDraft.trim()
+    const when = ritualWhenDraft.trim()
+    if (!name) {
+      onToast('Add a ritual name first.')
+      return
+    }
+
+    const updated = {
+      ...state,
+      customRituals: [
+        ...(state.customRituals || []),
+        {
+          name,
+          when: when || 'Anytime',
+          createdAt: new Date().toISOString(),
+        },
+      ],
+    }
+    saveState(updated)
+    setRitualNameDraft('')
+    setRitualWhenDraft('')
+    setShowAddRitualForm(false)
+    onToast('Ritual added.')
+  }
+
+  const removeRitual = (idx: number) => {
+    const updated = {
+      ...state,
+      customRituals: (state.customRituals || []).filter((_, i) => i !== idx),
+    }
+    saveState(updated)
+    onToast('Ritual removed.')
   }
 
   // Build trigger map data sorted highest to lowest, based on craving wins.
@@ -163,33 +201,49 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
       <div id="rituals-list">
         <div className="ritual-card">
           <div className="ritual-body">
-            <div className="ritual-name">{RITUAL_DATA[state.ritual || 'necklace'].name}</div>
+            <div className="ritual-name">{RITUAL_DATA.necklace.name}</div>
             <div className="ritual-sub">Your main craving tool</div>
           </div>
         </div>
-        <div className="ritual-card">
-          <div className="ritual-body">
-            <div className="ritual-name">Flavor refills</div>
-            <div className="ritual-sub">Backup · after meals</div>
+        {showAddRitualForm && (
+          <div className="callout" style={{ marginBottom: 12 }}>
+            <div className="field" style={{ marginBottom: 10 }}>
+              <label>Ritual name</label>
+              <input
+                type="text"
+                placeholder="e.g. Cold water reset"
+                value={ritualNameDraft}
+                onChange={(e) => setRitualNameDraft(e.target.value)}
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>When to use it</label>
+              <input
+                type="text"
+                placeholder="e.g. During work stress"
+                value={ritualWhenDraft}
+                onChange={(e) => setRitualWhenDraft(e.target.value)}
+              />
+            </div>
+            <button className="btn btn--dark" style={{ padding: '10px 14px', fontSize: 14 }} onClick={addRitual}>
+              Save ritual
+            </button>
           </div>
-        </div>
-        <div className="ritual-card">
-          <div className="ritual-body">
-            <div className="ritual-name">5 slow breaths</div>
-            <div className="ritual-sub">Anywhere, anytime</div>
-          </div>
-        </div>
-        <button className="add-link" onClick={() => onToast('Add ritual coming soon')}>+ Add a ritual</button>
+        )}
+
         {(state.customRituals || []).map((r, i) => (
           <div key={i} className="ritual-card">
-            <div className="ritual-body"><div className="ritual-name">{r.name}</div><div className="ritual-sub">{r.when || 'Anytime'}</div></div>
-            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mid-brown)', fontSize: 20, padding: '0 6px' }} onClick={() => {
-              const updated = { ...state, customRituals: (state.customRituals || []).filter((_, idx) => idx !== i) }
-              saveState(updated)
-              onToast('Ritual removed.')
-            }}>×</button>
+            <div className="ritual-body">
+              <div className="ritual-name">{r.name}</div>
+              <div className="ritual-sub">{r.when || 'Anytime'}</div>
+            </div>
+            <button className="ritual-remove-btn" onClick={() => removeRitual(i)}>Remove</button>
           </div>
         ))}
+
+        <button className="add-link" onClick={() => setShowAddRitualForm((v) => !v)}>
+          {showAddRitualForm ? 'Cancel' : '+ Add a ritual'}
+        </button>
       </div>
 
       {/* Breathing tool removed to match original index.html (breathing is handled via modal elsewhere) */}
@@ -203,7 +257,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
       {showRiskyForm && (
         <div style={{ background: 'white', borderRadius: 'var(--radius-card)', padding: 16, marginBottom: 16 }}>
           <h3 style={{ fontSize: 15, marginBottom: 12 }}>Plan a risky day</h3>
-          <p style={{ fontSize: 13, color: 'var(--mid-brown)', marginBottom: 12 }}>Weddings, flights, nights out — pre-plan, don&apos;t improvise.</p>
+          <p style={{ fontSize: 13, color: 'var(--mid-brown)', marginBottom: 12 }}>Weddings, flights, nights out - pre-plan, don&apos;t improvise.</p>
           <div className="field">
             <label>What&apos;s the event?</label>
             <input type="text" placeholder="e.g. Sarah's wedding, flight to LA" value={riskyEvent} onChange={(e) => setRiskyEvent(e.target.value)} />

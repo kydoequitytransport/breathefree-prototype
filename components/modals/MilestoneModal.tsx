@@ -99,9 +99,6 @@ export function MilestoneModal({ isOpen, onClose, milestone, renderedTitle, rend
       </div>
       <h2 style={{ marginTop: 6 }} id="unlock-title">{renderedTitle}</h2>
       <p style={{ marginTop: 10 }} id="unlock-fact">{renderedFact}</p>
-      <div style={{ marginTop: 20, background: 'var(--lighter-cream)', padding: 14, borderRadius: 'var(--radius-callout)', fontSize: 14, color: 'var(--brown-text)' }}>
-        That&apos;s real proof your body is healing — not a number on a streak.
-      </div>
       <div className="modal-actions">
         {milestone.celebrate && (
           <>
@@ -109,7 +106,7 @@ export function MilestoneModal({ isOpen, onClose, milestone, renderedTitle, rend
               {copying ? 'Preparing image...' : '📸 Copy as image'}
             </button>
             <button className="btn--ghost" id="unlock-share-btn" onClick={handleShare}>
-              Open Circle group →
+              Open Circle group
             </button>
           </>
         )}

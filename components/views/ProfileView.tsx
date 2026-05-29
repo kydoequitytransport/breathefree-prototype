@@ -60,7 +60,7 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
   }
 
   const handleLogout = async () => {
-    if (!confirm('Log out? Your data stays safe — sign back in with the same email.')) return
+    if (!confirm('Log out? Your data stays safe - sign back in with the same email.')) return
     track('Logged Out')
     await signOut()
     clearLocalStorage()
@@ -122,7 +122,7 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
   const quitDateObj = state.quitDate ? new Date(state.quitDate) : null
   const quitDateDisplay = (quitDateObj && !Number.isNaN(quitDateObj.getTime()))
     ? quitDateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-    : '—'
+    : '-'
 
   return (
     <div className="view active" id="profile" style={{ padding: '0 22px 24px' }}>
@@ -287,13 +287,6 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
         </button>
       </div>
 
-      {/* Dev reset */}
-      <button
-        style={{ marginTop: 12, fontSize: 10, color: 'rgba(45,31,18,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}
-        onClick={() => { if (confirm('Reset all data?')) { clearLocalStorage(); window.location.reload() } }}
-      >
-        reset
-      </button>
     </div>
   )
 }

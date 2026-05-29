@@ -127,9 +127,20 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
           <LeafIcon className="leaf-svg" style={{ width: 44, height: 44, flexShrink: 0, color: 'var(--leaf-bright)' }} />
           <div>
             <div className="hero-num" id="total-clean-days">{computed.totalCleanDays}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="hero-num-label-row">
               <div className="hero-num-label">Days since quit date</div>
-              <button className="hint-btn" title={"Every day since your quit date counts. Slips included. Showing up and continuing to try is what counts here."} style={{ background: 'none', border: 'none', cursor: 'help', color: 'var(--mid-brown)', fontWeight: 700 }}>?</button>
+              <span className="hint-wrap">
+                <button
+                  className="hint-btn"
+                  type="button"
+                  aria-label="About total clean days"
+                >
+                  ?
+                </button>
+                <span className="hint-popover" role="tooltip">
+                  Every day since your quit date counts. Slips included. Showing up and continuing to try is what counts here.
+                </span>
+              </span>
             </div>
           </div>
         </div>

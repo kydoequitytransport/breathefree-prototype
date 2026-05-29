@@ -36,7 +36,7 @@ export function ResetOverlay({ isOpen, email, onClose }: ResetOverlayProps) {
 
       const { error } = await updateUserPassword(password)
       if (error) throw error
-      setMessage('Password updated — reloading...')
+      setMessage('Password updated - reloading...')
       setTimeout(() => {
         onClose()
         window.history.replaceState({}, document.title, window.location.pathname)
