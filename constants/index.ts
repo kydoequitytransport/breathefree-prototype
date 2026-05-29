@@ -76,9 +76,9 @@ export const WITHDRAWAL_STAGES: Record<number, { text: string }> = {
 export const PRODUCTS: Product[] = [
   { id: 'necklace', name: 'BreatheFree necklace', tagline: 'Your primary ritual. Resistance breathing, everywhere you go.', icon: '🫁', url: 'https://breathefree.shop/products/the-smoke-free-necklace', badge: null },
   { id: 'refills', name: 'Pure flavor refills', tagline: "Hand-to-mouth + flavor. For cravings breath alone can't handle.", icon: '🍃', url: 'https://breathefree.shop/products/flavor-refills-copy', badge: 'Most popular' },
-  { id: 'mullein', name: 'Mullein Gummies', tagline: 'For clearer breathing and less coughing.', icon: '🌿', url: 'https://breathefree.shop/products/gummies-for-lung-health', badge: null },
-  { id: 'zenflow', name: 'ZenFlow Breathing Stone', tagline: 'Stronger resistance, in a pocket-friendly stone.', icon: '🪨', url: 'https://breathefree.shop/products/zenflow-breathing-stone', badge: null },
-  { id: 'spinner', name: 'Irritability Spinner Rings', tagline: 'Spin it to ride out a craving.', icon: '💍', url: 'https://breathefree.shop/products/free-fidget-spinner-rings', badge: null },
+  { id: 'mullein', name: 'Mullein Gummies', tagline: 'For clearer breathing and less coughing.', icon: '🌿', url: 'https://breathefree.shop/products/mullein-gummies-for-lung-health', badge: null },
+  { id: 'zenflow', name: 'ZenFlow Breathing Stone', tagline: 'Stronger resistance, in a pocket-friendly stone.', icon: '🪨', url: 'https://breathefree.shop/products/tigerzen', badge: null },
+  { id: 'spinner', name: 'Irritability Spinner Rings', tagline: 'Spin it to ride out a craving.', icon: '💍', url: 'https://breathefree.shop/products/stress-free-fidget-spinner-rings', badge: null },
 ]
 
 export const FLAVORS: Flavor[] = [

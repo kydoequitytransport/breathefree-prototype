@@ -251,37 +251,10 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
       {/* Risky day plans */}
       <div className="section-row">
         <div className="section-label">Risky day plans</div>
-        <button className="link" onClick={() => setShowRiskyForm(true)}>+ Add plan</button>
+        {/* <button className="link" onClick={() => setShowRiskyForm(true)}>+ Add plan</button> */}
       </div>
 
-      {showRiskyForm && (
-        <div style={{ background: 'white', borderRadius: 'var(--radius-card)', padding: 16, marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 12 }}>Plan a risky day</h3>
-          <p style={{ fontSize: 13, color: 'var(--mid-brown)', marginBottom: 12 }}>Weddings, flights, nights out - pre-plan, don&apos;t improvise.</p>
-          <div className="field">
-            <label>What&apos;s the event?</label>
-            <input type="text" placeholder="e.g. Sarah's wedding, flight to LA" value={riskyEvent} onChange={(e) => setRiskyEvent(e.target.value)} />
-          </div>
-          <div className="field">
-            <label>When?</label>
-            <input type="date" value={riskyDate} onChange={(e) => setRiskyDate(e.target.value)} />
-          </div>
-          <div className="field">
-            <label>What&apos;s your plan?</label>
-            <textarea
-              rows={3}
-              placeholder="e.g. Keep necklace in pocket. Step outside every 30 min. Text Jordan if it gets hard."
-              value={riskyPlan}
-              onChange={(e) => setRiskyPlan(e.target.value)}
-              style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid var(--soft-cream)', fontFamily: 'inherit', fontSize: 14, resize: 'vertical' }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button className="btn btn--dark" onClick={saveRiskyDay}>Lock in my plan</button>
-            <button className="btn--ghost" onClick={() => setShowRiskyForm(false)}>Cancel</button>
-          </div>
-        </div>
-      )}
+      {/* Risky day plan form hidden as requested */}
 
       <div id="risky-list">
         {(!state.riskyDayPlans || state.riskyDayPlans.length === 0) ? (
@@ -304,7 +277,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
             </div>
           ))
         )}
-        <button className="btn--white-outline" style={{ marginTop: 12, display: 'block', width: '100%', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setShowRiskyForm(true)}>+ Plan a risky day</button>
+        {/* <button className="btn--white-outline" style={{ marginTop: 12, display: 'block', width: '100%', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setShowRiskyForm(true)}>+ Plan a risky day</button> */}
       </div>
 
       <CheckinModal
