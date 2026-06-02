@@ -1,13 +1,15 @@
 import type { Milestone, Product, Flavor } from '@/types'
 
 export const MILESTONES: Milestone[] = [
-  { day: 1, key: '1d', celebrate: true, title: '1 day clean', emoji: '🌅', fact: 'A full day. Your heart attack risk already dropped. The hardest part of day one is behind you - the brain is starting to adjust.' },
-  { day: 7, key: '1wk', celebrate: true, title: '1 week clean', emoji: '🌱', fact: 'A full week. Your body is adjusting. Sleep is starting to normalize. You got through the hardest week - it only gets lighter from here.' },
-  { day: 14, key: '2wk', celebrate: true, title: '2 weeks - circulation back', emoji: '🪷', fact: 'Your circulation has measurably improved. Walking up stairs is getting easier. Lung function is climbing.' },
-  { day: 30, key: '1mo', celebrate: true, title: '1 month - coughing fades', emoji: '🌿', fact: 'Cilia in your lungs are regrowing. Coughing and shortness of breath are dropping. Your immune system is firing properly again.' },
-  { day: 90, key: '3mo', celebrate: true, title: '3 months - lungs stronger', emoji: '💪', fact: 'Lung function up 30%. You breathe deeper without thinking about it. This is identity-level change.' },
-  { day: 180, key: '6mo', celebrate: true, title: "6 months - you're {nonUser}", emoji: '🏆', fact: "Your relapse risk has dropped dramatically. You're not \"quitting\" anymore - you're someone who {negVerb}." },
-  { day: 365, key: '1yr', celebrate: true, title: '1 year - heart disease risk halved', emoji: '🛟', fact: 'Your risk of coronary heart disease is half what it was a year ago. Half. You did that with breath and rituals.' },
+  { day: 1, key: '1d', celebrate: true, title: 'Day one.', emoji: '🌅', fact: "One full day of choosing yourself. That's where every long run starts." },
+  { day: 7, key: '1wk', celebrate: true, title: 'Still showing up.', emoji: '🌱', fact: "Most people give up trying. You're still here. That's something to be proud of." },
+  { day: 14, key: '2wk', celebrate: true, title: 'Two weeks in.', emoji: '🪷', fact: 'Anyone can try for a day. Two weeks is a different person.' },
+  { day: 30, key: '1mo', celebrate: true, title: 'You stayed.', emoji: '🌿', fact: "You're a month into something most people never finish." },
+  { day: 60, key: '2mo', celebrate: true, title: 'You kept going.', emoji: '🕊️', fact: "Two months ago you made a decision. You're still living it." },
+  { day: 90, key: '3mo', celebrate: true, title: 'You crossed the line.', emoji: '💪', fact: "Most people who make it to month three don't go back." },
+  { day: 180, key: '6mo', celebrate: true, title: 'Half a year.', emoji: '🏆', fact: "You've spent six months becoming someone different." },
+  { day: 270, key: '9mo', celebrate: true, title: 'Almost a year.', emoji: '🌙', fact: "Three months from now, you'll have done a year of this." },
+  { day: 365, key: '1yr', celebrate: true, title: 'You did it.', emoji: '🛟', fact: 'A year ago this felt impossible. Look at you now.' },
 ]
 
 export const DAY_MILESTONES = [
@@ -24,8 +26,8 @@ export const DAY_MILESTONES = [
 
 export const DAY_MILESTONE_MAP: Record<string, string | null> = {
   day7: '1wk', day14: '2wk', day30: '1mo',
-  day60: null, day90: '3mo', day120: null, day180: '6mo',
-  day270: null, day365: '1yr',
+  day60: '2mo', day90: '3mo', day120: null, day180: '6mo',
+  day270: '9mo', day365: '1yr',
 }
 
 export const RITUAL_DATA = {
