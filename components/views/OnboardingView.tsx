@@ -280,7 +280,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
               style={{ width: '100%', justifyContent: 'flex-start', padding: '16px 18px' }}
               onClick={() => setSelectedWhy(WHY_OTHER)}
             >
-              Others
+              Other
             </button>
             {selectedWhy === WHY_OTHER && (
               <div className="field" style={{ marginTop: 0 }}>
@@ -358,7 +358,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
               ))}
             </div>
            </div>
-          <div className="field" style={{ marginTop: 20 }}>
+          <div className="field" style={{ marginTop: 12 }}>
             <label>When does your hardest craving usually hit?</label>
             <div className="chips" id="onb-trigger">
               {[
