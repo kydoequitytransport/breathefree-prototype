@@ -358,7 +358,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
               ))}
             </div>
            </div>
-          <div className="field" style={{ marginTop: 12 }}>
+          <div className="field">
             <label>When does your hardest craving usually hit?</label>
             <div className="chips" id="onb-trigger">
               {[
