@@ -23,6 +23,7 @@ interface HomeViewProps {
 
 export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: HomeViewProps) {
   const { state, saveState } = useApp()
+  const MIN_MILESTONE_MODAL_DAY = 7
 
   const checkForNewMilestones = useCallback(() => {
     if (!state) return
@@ -39,7 +40,7 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
       if (unlocked.has(m.key)) continue
       unlocked.add(m.key)
       changed = true
-      if (m.celebrate) newlyUnlockedCelebrations.push(m.key)
+      if (m.celebrate && m.day >= MIN_MILESTONE_MODAL_DAY) newlyUnlockedCelebrations.push(m.key)
     }
 
     if (changed) {

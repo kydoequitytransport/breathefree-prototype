@@ -108,7 +108,7 @@ export default function BreatheFreeApp() {
 
   const handleMilestoneUnlock = useCallback((key: string) => {
     const m = MILESTONES.find((x) => x.key === key)
-    if (m) {
+    if (m && m.day >= 7) {
       setActiveMilestone(m)
       if (m.celebrate) fireConfetti()
     }
