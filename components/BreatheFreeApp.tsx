@@ -120,7 +120,7 @@ export default function BreatheFreeApp() {
   }
 
   const handleSlipConfirm = () => {
-    // removed plan locked in toast per feedback
+    toast('Slip logged. Data saved.')
   }
 
   const handleLogout = () => {

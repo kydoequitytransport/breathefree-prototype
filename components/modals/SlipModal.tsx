@@ -83,7 +83,6 @@ export function SlipModal({ isOpen, onClose, onConfirm }: SlipModalProps) {
   return (
     <Modal id="slip-modal" isOpen={isOpen} onClose={onClose}>
       <div style={{ background: 'linear-gradient(135deg, #F2D9D5, #F8EBE8)', padding: 20, borderRadius: 'var(--radius-card)', marginBottom: 16 }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>🤝</div>
         <h2 style={{ color: '#7C3A33' }}>That&apos;s data, not defeat.</h2>
         <p style={{ marginTop: 8, color: '#7C3A33' }}>One slip doesn&apos;t erase who you&apos;re becoming. Relapse is part of how the brain unlearns.</p>
       </div>
@@ -135,12 +134,14 @@ export function SlipModal({ isOpen, onClose, onConfirm }: SlipModalProps) {
           ✓ Your identity - you&apos;re still becoming <span id="slip-free-term">{ft}</span><br />
           ✓ Your why: {whyLine}
         </p>
-        <p style={{ fontSize: 13, color: 'var(--mid-brown)', marginTop: 10 }}>Everything else you earned is yours.</p>
       </div>
 
       <div className="modal-actions">
         <button className="btn btn--dark" onClick={handleBounceBack}>
-          Back to my progress
+          Log slip & back to progress
+        </button>
+        <button className="btn--ghost" onClick={onClose}>
+          Cancel
         </button>
       </div>
     </Modal>

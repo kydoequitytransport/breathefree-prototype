@@ -32,9 +32,17 @@ export function CravingModal({ isOpen, onClose, onBeat, onSlip }: CravingModalPr
 
   const ritual = RITUAL_DATA[state?.ritual ?? 'necklace'] ?? RITUAL_DATA.necklace
 
+  const baseTriggerOptions = CRAVING_TRIGGERS.filter((t) => t.value !== 'other')
+  const otherTriggerOption = CRAVING_TRIGGERS.find((t) => t.value === 'other')
+  const customTriggerOptions = (state?.customTriggers ?? [])
+    .map((t) => t.trim())
+    .filter((t) => t && t.toLowerCase() !== 'other' && !CRAVING_TRIGGERS.some((base) => base.value === t.toLowerCase()))
+    .map((t) => ({ value: t.toLowerCase(), label: t.charAt(0).toUpperCase() + t.slice(1) }))
+
   const allTriggers = [
-    ...CRAVING_TRIGGERS,
-    ...(state?.customTriggers ?? []).map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) })),
+    ...baseTriggerOptions,
+    ...customTriggerOptions,
+    ...(otherTriggerOption ? [otherTriggerOption] : []),
   ]
 
   const handleTriggerSelect = (value: string) => {

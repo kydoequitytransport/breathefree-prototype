@@ -66,6 +66,37 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
   const leftMilestones = allMilestones.slice(0, mid)
   const rightMilestones = allMilestones.slice(mid)
 
+  const renderMilestoneItem = (m: typeof DISPLAY_MILESTONES[number], disableOpen = false) => {
+    const earned = m.day <= cumDays
+    const className = `ms-item${earned ? ' ms-item--earned' : ' ms-item--locked'}`
+
+    if (disableOpen) {
+      return (
+        <div key={m.key} className={className}>
+          <span className="ms-item-inner">
+            {earned ? <LeafIcon className="ms-item-icon" /> : <span className="ms-item-circle" />}
+            <span className="ms-item-text">{m.label}</span>
+          </span>
+        </div>
+      )
+    }
+
+    return (
+      <button
+        key={m.key}
+        type="button"
+        className={className}
+        onClick={() => earned && openDayMilestone(m.key)}
+        disabled={!earned}
+      >
+        <span className="ms-item-inner">
+          {earned ? <LeafIcon className="ms-item-icon" /> : <span className="ms-item-circle" />}
+          <span className="ms-item-text">{m.label}</span>
+        </span>
+      </button>
+    )
+  }
+
   return (
     <div className="view active" id="calendar" style={{ padding: '0 22px 24px' }}>
       <Topbar onProfileClick={() => onNavigate('profile')} />
@@ -131,60 +162,15 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
       </div>
 
       {/* Milestones */}
-      <div className="milestones-section" id="milestone-map" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 24 }}>
-        <div className="ms-section-label" style={{ textAlign: 'center', marginBottom: 10, fontWeight: 500, letterSpacing: 1 }}>Your milestones</div>
-        <div className="ms-card" style={{ background: 'var(--soft-cream)', borderRadius: 18, padding: '14px 16px', minWidth: 260, maxWidth: 400, width: '100%' }}>
-          <div className="ms-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 20px' }}>
-            <div className="ms-col" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {leftMilestones.map((m) => {
-                const earned = m.day <= cumDays
-                // 1 day milestone does not open popup
-                if (m.key === 'day1') {
-                  return (
-                    <div key={m.key} className={`ms-item${earned ? ' ms-item--earned' : ' ms-item--locked'}`} style={{ cursor: 'default', display: 'flex', alignItems: 'center', padding: '5px 0', background: 'transparent', border: 'none' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        {earned ? <LeafIcon className="ms-item-icon" style={{ color: 'var(--leaf)' }} /> : <span className="ms-item-circle" />}
-                        <span className="ms-item-text" style={{ fontSize: 17, fontWeight: 500 }}>{m.label}</span>
-                      </span>
-                    </div>
-                  )
-                }
-                return (
-                  <button
-                    key={m.key}
-                    type="button"
-                    className={`ms-item${earned ? ' ms-item--earned' : ' ms-item--locked'}`}
-                    style={{ display: 'flex', alignItems: 'center', padding: '5px 0', width: '100%', justifyContent: 'flex-start', background: 'transparent', border: 'none', outline: 'none', cursor: earned ? 'pointer' : 'default' }}
-                    onClick={() => earned && openDayMilestone(m.key)}
-                    disabled={!earned}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                      {earned ? <LeafIcon className="ms-item-icon" style={{ color: 'var(--leaf)' }} /> : <span className="ms-item-circle" />}
-                      <span className="ms-item-text" style={{ fontSize: 17, fontWeight: 500 }}>{m.label}</span>
-                    </span>
-                  </button>
-                )
-              })}
+      <div className="milestones-section" id="milestone-map">
+        <div className="ms-section-label">Your milestones</div>
+        <div className="ms-card">
+          <div className="ms-grid">
+            <div className="ms-col">
+              {leftMilestones.map((m) => renderMilestoneItem(m, m.key === 'day1'))}
             </div>
-            <div className="ms-col" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {rightMilestones.map((m) => {
-                const earned = m.day <= cumDays
-                return (
-                  <button
-                    key={m.key}
-                    type="button"
-                    className={`ms-item${earned ? ' ms-item--earned' : ' ms-item--locked'}`}
-                    style={{ display: 'flex', alignItems: 'center', padding: '5px 0', width: '100%', justifyContent: 'flex-start', background: 'transparent', border: 'none', outline: 'none', cursor: earned ? 'pointer' : 'default' }}
-                    onClick={() => earned && openDayMilestone(m.key)}
-                    disabled={!earned}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                      {earned ? <LeafIcon className="ms-item-icon" style={{ color: 'var(--leaf)' }} /> : <span className="ms-item-circle" />}
-                      <span className="ms-item-text" style={{ fontSize: 17, fontWeight: 500 }}>{m.label}</span>
-                    </span>
-                  </button>
-                )
-              })}
+            <div className="ms-col">
+              {rightMilestones.map((m) => renderMilestoneItem(m))}
             </div>
           </div>
         </div>

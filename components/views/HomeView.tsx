@@ -11,7 +11,7 @@ import {
   sameDay,
   interpolate,
 } from '@/lib/stateUtils'
-import { WHY_IDENTITY, RITUAL_DATA, TRIGGER_LABELS, MILESTONES } from '@/constants'
+import { WHY_IDENTITY, RITUAL_DATA, MILESTONES } from '@/constants'
 import type { ViewId } from '@/types'
 
 interface HomeViewProps {
@@ -68,8 +68,17 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
   const stage = getStageLabel(computed.totalCleanDays)
   const money = Math.round(computed.totalCleanDays * (state.dailySpend || 0))
   const ritual = RITUAL_DATA[state.ritual] ?? RITUAL_DATA.necklace
-  const triggerLabel = TRIGGER_LABELS[state.trigger] || ''
   const identityLine = WHY_IDENTITY[state.why] || state.why || `You're becoming ${ft}.`
+  const sortedRiskyPlans = (state.riskyDayPlans || [])
+    .slice()
+    .sort((a, b) => {
+      const aTime = a.date ? new Date(a.date).getTime() : Number.POSITIVE_INFINITY
+      const bTime = b.date ? new Date(b.date).getTime() : Number.POSITIVE_INFINITY
+      const safeATime = Number.isNaN(aTime) ? Number.POSITIVE_INFINITY : aTime
+      const safeBTime = Number.isNaN(bTime) ? Number.POSITIVE_INFINITY : bTime
+      return safeATime - safeBTime
+    })
+  const primaryRiskyPlan = sortedRiskyPlans[0]
 
   // Week strip
   const today = new Date()
@@ -166,17 +175,14 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
 
       {/* IF / THEN plan */}
       <div className="section-row">
-        <div className="section-label">IF / THEN plan</div>
+        <div className="section-label">If / Then Plan</div>
         <button className="link" onClick={() => onNavigate('triggers')}>Edit →</button>
       </div>
       <div className="callout" style={{ marginBottom: 8 }}>
-        {state.riskyDayPlans && state.riskyDayPlans.length > 0 ? (
+        {primaryRiskyPlan ? (
           <>
             <p>
-              <strong>If</strong> {state.riskyDayPlans[0].event || 'I hit a risky moment'}, <strong>then</strong> {state.riskyDayPlans[0].plan || `I use ${ritual.name.toLowerCase()}.`}
-            </p>
-            <p style={{ marginTop: 8, fontSize: 12, color: 'var(--mid-brown)' }}>
-              Trigger focus: {triggerLabel || 'Any craving moment'}
+              <strong>If</strong> {primaryRiskyPlan.event || 'I hit a risky moment'}, <strong>then</strong> {primaryRiskyPlan.plan || `I use ${ritual.name.toLowerCase()}.`}
             </p>
           </>
         ) : (

@@ -541,35 +541,62 @@ html, body {
 .calcell--empty { visibility: hidden; }
 
 /* ---------- Milestones ---------- */
-.milestones-section { margin-top: 8px; }
+.milestones-section {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 .milestones-section .ms-section-label {
   font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--mid-brown); font-weight: 500; margin-bottom: 14px;
+  color: var(--mid-brown); font-weight: 600; margin-bottom: 10px;
+  text-align: center;
 }
 .ms-card {
-  background: white;
-  border: 1px solid rgba(45,31,18,0.15);
-  border-radius: var(--radius-card);
+  width: 100%;
+  min-width: 260px;
+  max-width: 400px;
+  background: var(--soft-cream);
+  border: 1px solid rgba(45,31,18,0.12);
+  border-radius: 18px;
   padding: 14px 16px;
 }
 .ms-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 28px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  grid-template-columns: max-content max-content;
+  justify-content: space-between;
+  column-gap: 28px;
+  padding-inline: 18px;
+  row-gap: 10px;
+  align-items: stretch;
 }
-.ms-col { display: flex; flex-direction: column; gap: 6px; }
+.ms-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .ms-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-start;
   background: none;
   border: none;
-  padding: 2px 0;
+  width: 100%;
+  padding: 6px 0;
   text-align: left;
   font-family: inherit;
+  min-height: 40px;
 }
 .ms-item--earned { cursor: pointer; }
 .ms-item--locked { cursor: default; }
+.ms-item-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .ms-item-circle {
   width: 12px;
   height: 12px;
@@ -584,10 +611,10 @@ html, body {
   flex-shrink: 0;
 }
 .ms-item-text {
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.25;
   color: var(--brown-text);
-  font-weight: 500;
+  font-weight: 600;
 }
 .ms-item--locked .ms-item-text { color: var(--brown-text); }
 

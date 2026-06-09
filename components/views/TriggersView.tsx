@@ -20,6 +20,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
   const [riskyEvent, setRiskyEvent] = useState('')
   const [riskyDate, setRiskyDate] = useState('')
   const [riskyPlan, setRiskyPlan] = useState('')
+  const [editingRiskyIndex, setEditingRiskyIndex] = useState<number | null>(null)
   const [showRiskyForm, setShowRiskyForm] = useState(false)
   const [showAddRitualForm, setShowAddRitualForm] = useState(false)
   const [ritualNameDraft, setRitualNameDraft] = useState('')
@@ -27,22 +28,34 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
 
   if (!state) return null
 
-  const saveRiskyDay = () => {
-    if (!riskyEvent.trim()) { onToast('Enter the event name.'); return }
-    const updated = {
-      ...state,
-      riskyDayPlans: [
-        ...(state.riskyDayPlans || []),
-        { event: riskyEvent.trim(), date: riskyDate, plan: riskyPlan.trim() },
-      ],
-    }
-    saveState(updated)
-    track('Risky Day Planned', { event: riskyEvent })
+  const resetRiskyForm = () => {
     setRiskyEvent('')
     setRiskyDate('')
     setRiskyPlan('')
+    setEditingRiskyIndex(null)
     setShowRiskyForm(false)
-    onToast('Plan locked in.')
+  }
+
+  const saveRiskyDay = () => {
+    if (!riskyEvent.trim()) { onToast('Enter the event name.'); return }
+    const plans = [...(state.riskyDayPlans || [])]
+    const nextPlan = { event: riskyEvent.trim(), date: riskyDate, plan: riskyPlan.trim() }
+    const isEditing = editingRiskyIndex !== null
+
+    if (isEditing && editingRiskyIndex >= 0 && editingRiskyIndex < plans.length) {
+      plans[editingRiskyIndex] = nextPlan
+    } else {
+      plans.push(nextPlan)
+    }
+
+    const updated = {
+      ...state,
+      riskyDayPlans: plans,
+    }
+    saveState(updated)
+    track(isEditing ? 'Risky Day Plan Edited' : 'Risky Day Planned', { event: riskyEvent })
+    resetRiskyForm()
+    onToast(isEditing ? 'Plan updated.' : 'Plan locked in.')
   }
 
   const deleteRisky = (idx: number) => {
@@ -52,6 +65,16 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
     }
     saveState(updated)
     onToast('Plan removed.')
+  }
+
+  const startEditRisky = (idx: number) => {
+    const plan = (state.riskyDayPlans || [])[idx]
+    if (!plan) return
+    setRiskyEvent(plan.event || '')
+    setRiskyDate(plan.date || '')
+    setRiskyPlan(plan.plan || '')
+    setEditingRiskyIndex(idx)
+    setShowRiskyForm(true)
   }
 
   const addRitual = () => {
@@ -165,6 +188,16 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
   }
 
   const { rows: triggerRows, hasData, topKey, topLabel } = buildTriggerMap()
+  const sortedRiskyPlans = (state.riskyDayPlans || [])
+    .map((plan, originalIndex) => ({ plan, originalIndex }))
+    .sort((a, b) => {
+      const aTime = a.plan.date ? new Date(a.plan.date).getTime() : Number.POSITIVE_INFINITY
+      const bTime = b.plan.date ? new Date(b.plan.date).getTime() : Number.POSITIVE_INFINITY
+      const safeATime = Number.isNaN(aTime) ? Number.POSITIVE_INFINITY : aTime
+      const safeBTime = Number.isNaN(bTime) ? Number.POSITIVE_INFINITY : bTime
+      if (safeATime !== safeBTime) return safeATime - safeBTime
+      return a.originalIndex - b.originalIndex
+    })
 
   return (
     <div className="view active" id="triggers" style={{ padding: '0 22px 24px' }}>
@@ -187,7 +220,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
           ))}
           <div className="trigger-synth">
             {hasData && topKey ? (
-              <>Your #1 trigger is <b>{topLabel}</b>. Your ritual is tuned for it.</>
+              <>Your #1 trigger is <b>{topLabel}</b>. Your ritual is prepared for it.</>
             ) : (
               <>Log a craving to see your top trigger.</>
             )}
@@ -248,9 +281,9 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
 
       {/* Breathing tool removed to match original index.html (breathing is handled via modal elsewhere) */}
 
-      {/* Risky day plans */}
+      {/* If / Then plan */}
       <div className="section-row">
-        <div className="section-label">Risky day plans</div>
+        <div className="section-label">If / Then Plan</div>
         {/* <button className="link" onClick={() => setShowRiskyForm(true)}>+ Add plan</button> */}
       </div>
 
@@ -284,9 +317,9 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button className="btn btn--dark" style={{ padding: '10px 14px', fontSize: 14 }} onClick={saveRiskyDay}>
-              Save plan
+              {editingRiskyIndex !== null ? 'Save changes' : 'Save plan'}
             </button>
-            <button className="btn--ghost" onClick={() => setShowRiskyForm(false)}>
+            <button className="btn--ghost" onClick={resetRiskyForm}>
               Cancel
             </button>
           </div>
@@ -297,8 +330,8 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
         {(!state.riskyDayPlans || state.riskyDayPlans.length === 0) ? (
           <div className="callout callout-empty">No plans yet. Pre-planning beats improvising every time. Examples: holidays, vacations, work stress weeks, anniversaries.</div>
         ) : (
-          state.riskyDayPlans.map((plan, i) => (
-            <div key={i} className="risky-plan-card">
+          sortedRiskyPlans.map(({ plan, originalIndex }) => (
+            <div key={originalIndex} className="risky-plan-card">
               <div>
                 <div className="rpc-event">{plan.event || 'Unnamed event'}</div>
                 {plan.date && (
@@ -309,7 +342,8 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
                 <div className="rpc-plan">{plan.plan}</div>
               </div>
               <div className="rpc-actions">
-                <button className="del" onClick={() => deleteRisky(i)}>Remove</button>
+                <button className="del" onClick={() => startEditRisky(originalIndex)}>Edit</button>
+                <button className="del" onClick={() => deleteRisky(originalIndex)}>Remove</button>
               </div>
             </div>
           ))
@@ -319,7 +353,7 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
           style={{ marginTop: 12, display: 'block', width: '100%', cursor: 'pointer', fontFamily: 'inherit' }}
           onClick={() => setShowRiskyForm((v) => !v)}
         >
-          {showRiskyForm ? 'Cancel risky day form' : '+ Plan a risky day'}
+          {showRiskyForm ? 'Cancel if/then form' : '+ Add an if/then plan'}
         </button>
       </div>
 
