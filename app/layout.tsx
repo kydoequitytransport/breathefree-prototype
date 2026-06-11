@@ -5,6 +5,10 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'BreatheFree',
   description: 'Your quit starts with identity, not willpower.',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+  },
 }
 
 export const viewport: Viewport = {
