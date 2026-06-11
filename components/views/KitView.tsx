@@ -16,6 +16,11 @@ export function KitView({ onNavigate }: KitViewProps) {
 
   const extraProducts = PRODUCTS.filter((p) => p.id !== 'necklace' && p.id !== 'refills')
   const baseUrl = 'https://breathefree.shop/products/flavor-refills-copy'
+  const supportProductImages: Record<string, string> = {
+    mullein: '/Mullein_Gummies.png',
+    zenflow: '/ZenFlow_Breathing_Stone.png',
+    spinner: '/Irritability_Spinner_Rings.png',
+  }
 
   return (
     <div className="view active" id="kit" style={{ padding: '0 22px 24px' }}>
@@ -65,7 +70,18 @@ export function KitView({ onNavigate }: KitViewProps) {
         {extraProducts.map((p) => (
           <div key={p.id} className="support-card">
             <div className="support-card-row">
-              <div className="support-icon">{p.icon}</div>
+              <div className="support-icon">
+                {supportProductImages[p.id] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={supportProductImages[p.id]}
+                    alt={p.name}
+                    style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover' }}
+                  />
+                ) : (
+                  p.icon
+                )}
+              </div>
               <div>
                 <div className="support-name">{p.name}</div>
                 <div className="support-tag">{p.tagline}</div>
