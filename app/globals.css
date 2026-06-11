@@ -553,9 +553,10 @@ html, body {
   text-align: center;
 }
 .ms-card {
-  width: 100%;
+  width: calc(100% - 12px);
   min-width: 260px;
   max-width: 400px;
+  margin-inline: auto;
   background: var(--soft-cream);
   border: 1px solid rgba(45,31,18,0.12);
   border-radius: 18px;
@@ -566,10 +567,11 @@ html, body {
   width: 100%;
   max-width: 100%;
   margin: 0;
-  grid-template-columns: max-content max-content;
-  justify-content: space-between;
-  column-gap: 28px;
-  padding-inline: 18px;
+  grid-template-columns: repeat(2, minmax(124px, 1fr));
+  justify-content: center;
+  column-gap: 18px;
+  padding-inline-start: 40px;
+  padding-inline-end: 4px;
   row-gap: 10px;
   align-items: stretch;
 }
@@ -577,6 +579,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding: 8px 2px;
 }
 .ms-item {
   display: flex;

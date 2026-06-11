@@ -83,7 +83,6 @@ export function SlipModal({ isOpen, onClose, onConfirm }: SlipModalProps) {
   return (
     <Modal id="slip-modal" isOpen={isOpen} onClose={onClose}>
       <div style={{ background: 'linear-gradient(135deg, #F2D9D5, #F8EBE8)', padding: 20, borderRadius: 'var(--radius-card)', marginBottom: 16 }}>
-        <h2 style={{ color: '#7C3A33' }}>That&apos;s data, not defeat.</h2>
         <p style={{ marginTop: 8, color: '#7C3A33' }}>One slip doesn&apos;t erase who you&apos;re becoming. Relapse is part of how the brain unlearns.</p>
       </div>
 
