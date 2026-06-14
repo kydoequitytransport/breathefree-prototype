@@ -2,7 +2,7 @@ import type { Milestone, Product, Flavor } from '@/types'
 
 export const MILESTONES: Milestone[] = [
   { day: 1, key: '1d', celebrate: true, title: 'Day one.', emoji: '🌅', fact: "One full day of choosing yourself. That's where every long run starts." },
-  { day: 7, key: '1wk', celebrate: true, title: 'Still showing up.', emoji: '🌱', fact: "Most people give up trying. You're still here. That's something to be proud of." },
+  { day: 7, key: '1wk', celebrate: true, title: 'Still showing up.', emoji: '🌱', fact: "Most people give up trying. You're still here. That's something to be proud of. The first few weeks are the hardest, but you'll get through them." },
   { day: 14, key: '2wk', celebrate: true, title: 'Two weeks in.', emoji: '🪷', fact: 'Anyone can try for a day. Two weeks is a different person.' },
   { day: 30, key: '1mo', celebrate: true, title: 'You stayed.', emoji: '🌿', fact: "You're a month into something most people never finish." },
   { day: 60, key: '2mo', celebrate: true, title: 'You kept going.', emoji: '🕊️', fact: "Two months ago you made a decision. You're still living it." },
@@ -18,7 +18,6 @@ export const DAY_MILESTONES = [
   { day: 30,  key: 'day30',  label: '1 month' },
   { day: 60,  key: 'day60',  label: '2 months' },
   { day: 90,  key: 'day90',  label: '3 months' },
-  { day: 120, key: 'day120', label: '4 months' },
   { day: 180, key: 'day180', label: '6 months' },
   { day: 270, key: 'day270', label: '9 months' },
   { day: 365, key: 'day365', label: '1 year' },
@@ -26,7 +25,7 @@ export const DAY_MILESTONES = [
 
 export const DAY_MILESTONE_MAP: Record<string, string | null> = {
   day7: '1wk', day14: '2wk', day30: '1mo',
-  day60: '2mo', day90: '3mo', day120: null, day180: '6mo',
+  day60: '2mo', day90: '3mo', day180: '6mo',
   day270: '9mo', day365: '1yr',
 }
 
