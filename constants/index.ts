@@ -18,6 +18,7 @@ export const DAY_MILESTONES = [
   { day: 30,  key: 'day30',  label: '1 month' },
   { day: 60,  key: 'day60',  label: '2 months' },
   { day: 90,  key: 'day90',  label: '3 months' },
+  { day: 120, key: 'day120', label: '4 months' },
   { day: 180, key: 'day180', label: '6 months' },
   { day: 270, key: 'day270', label: '9 months' },
   { day: 365, key: 'day365', label: '1 year' },
@@ -25,7 +26,7 @@ export const DAY_MILESTONES = [
 
 export const DAY_MILESTONE_MAP: Record<string, string | null> = {
   day7: '1wk', day14: '2wk', day30: '1mo',
-  day60: '2mo', day90: '3mo', day180: '6mo',
+  day60: '2mo', day90: '3mo', day120: null, day180: '6mo',
   day270: '9mo', day365: '1yr',
 }
 

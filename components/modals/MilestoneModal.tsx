@@ -21,6 +21,7 @@ export function MilestoneModal({ isOpen, onClose, milestone, renderedTitle, rend
   const [copying, setCopying] = useState(false)
 
   if (!milestone) return null
+  const allowCopyScreenshot = milestone.key !== 'day120'
 
   const handleShare = () => {
     window.open('https://web.facebook.com/groups/breathefreecircle', '_blank')
@@ -167,9 +168,11 @@ export function MilestoneModal({ isOpen, onClose, milestone, renderedTitle, rend
       <div className="modal-actions">
         {milestone.celebrate && (
           <>
-            <button className="btn btn--dark" id="unlock-copy-btn" onClick={handleCopyImage}>
-              {copying ? 'Preparing screenshot...' : 'Copy screenshot'}
-            </button>
+            {allowCopyScreenshot && (
+              <button className="btn btn--dark" id="unlock-copy-btn" onClick={handleCopyImage}>
+                {copying ? 'Preparing screenshot...' : 'Copy screenshot'}
+              </button>
+            )}
             <button className="btn--ghost" id="unlock-share-btn" onClick={handleShare}>
               Share my progress
             </button>
