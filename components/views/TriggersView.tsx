@@ -203,9 +203,6 @@ export function TriggersView({ onNavigate, onToast }: TriggersViewProps) {
     <div className="view active" id="triggers" style={{ padding: '0 22px 24px' }}>
       <Topbar onProfileClick={() => onNavigate('profile')} />
 
-      <div className="section-row">
-        <div className="section-label">Trigger map</div>
-      </div>
       <div id="trigger-map">
         <div className="trigger-card">
           <h3>Trigger map</h3>
