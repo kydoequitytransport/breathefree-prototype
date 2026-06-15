@@ -13,6 +13,10 @@ interface MilestoneModalProps {
   renderedFact: string
 }
 
+// Keep this switch for quick rollback if product wants the slogan back later.
+const SHOW_COPY_SLOGAN = false
+const COPY_SLOGAN_TEXT = 'Progress over streaks.'
+
 export function MilestoneModal({ isOpen, onClose, milestone, renderedTitle, renderedFact }: MilestoneModalProps) {
   const [copying, setCopying] = useState(false)
 
@@ -59,9 +63,10 @@ export function MilestoneModal({ isOpen, onClose, milestone, renderedTitle, rend
     ctx.font = '700 32px Georgia, serif'
     ctx.fillText(formatMilestoneLabel(milestone.key), canvas.width / 2, cardY + 374)
 
-    const dividerY = cardY + cardHeight - 132
+    const sloganBaselineY = cardY + cardHeight - 56
+    const dividerY = sloganBaselineY - 76
     const contentTop = cardY + 444
-    const contentBottom = dividerY - 34
+    const contentBottom = SHOW_COPY_SLOGAN ? dividerY - 34 : cardY + cardHeight - 44
     const textWidth = 680
     const layout = fitMilestoneTextLayout(ctx, renderedTitle, renderedFact, textWidth, contentTop, contentBottom)
 
@@ -74,16 +79,18 @@ export function MilestoneModal({ isOpen, onClose, milestone, renderedTitle, rend
     ctx.font = `italic 400 ${layout.factFontSize}px Georgia, serif`
     drawCenteredLines(ctx, layout.factLines, canvas.width / 2, factStartY, layout.factLineHeight)
 
-    ctx.strokeStyle = 'rgba(94, 139, 47, 0.35)'
-    ctx.lineWidth = 4
-    ctx.beginPath()
-    ctx.moveTo(canvas.width / 2 - 52, dividerY)
-    ctx.lineTo(canvas.width / 2 + 52, dividerY)
-    ctx.stroke()
+    if (SHOW_COPY_SLOGAN) {
+      ctx.strokeStyle = 'rgba(94, 139, 47, 0.35)'
+      ctx.lineWidth = 4
+      ctx.beginPath()
+      ctx.moveTo(canvas.width / 2 - 52, dividerY)
+      ctx.lineTo(canvas.width / 2 + 52, dividerY)
+      ctx.stroke()
 
-    ctx.fillStyle = '#5E963E'
-    ctx.font = '700 52px Georgia, serif'
-    ctx.fillText('Progress over streaks.', canvas.width / 2, dividerY + 76)
+      ctx.fillStyle = '#5E963E'
+      ctx.font = '700 52px Georgia, serif'
+      ctx.fillText(COPY_SLOGAN_TEXT, canvas.width / 2, dividerY + 76)
+    }
 
     return await new Promise((resolve, reject) => {
       canvas.toBlob((blob) => {

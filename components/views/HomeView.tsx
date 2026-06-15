@@ -110,7 +110,6 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
       <div className="hero-dark">
         <div className="hero-row">
           <div className="hero-stage" id="hero-identity">{state.name}{stage ? ` · ${stage}` : ''}</div>
-          <div className="hero-day-badge" id="hero-day-badge">DAY {computed.currentRun}</div>
         </div>
         <div className="hero-mid">
           <LeafIcon className="leaf-svg" style={{ width: 44, height: 44, flexShrink: 0, color: 'var(--leaf-bright)' }} />
