@@ -18,6 +18,7 @@ import { SlipModal } from '@/components/modals/SlipModal'
 import { BeatModal } from '@/components/modals/BeatModal'
 import { MilestoneModal } from '@/components/modals/MilestoneModal'
 import { ResetOverlay } from '@/components/modals/ResetOverlay'
+import { PwaInstallPrompt } from '@/components/PwaInstallPrompt'
 import { MILESTONES } from '@/constants'
 import { interpolate } from '@/lib/stateUtils'
 import type { ViewId, Milestone } from '@/types'
@@ -242,6 +243,9 @@ export default function BreatheFreeApp() {
 
       {/* Toast */}
       <Toast message={toastMsg} visible={toastVisible} />
+
+      {/* PWA install CTA (shown only when browser allows prompt) */}
+      <PwaInstallPrompt />
     </div>
   )
 }

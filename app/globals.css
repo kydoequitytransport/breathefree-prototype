@@ -253,6 +253,18 @@ html, body {
 }
 .support-cta:hover { border-color: rgba(45,31,18,0.08); }
 
+/* PWA install prompt button */
+.pwa-install-btn {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 84px;
+  width: calc(100% - 28px);
+  max-width: 402px;
+  z-index: 55;
+  box-shadow: 0 10px 24px rgba(45, 31, 18, 0.22);
+}
+
 /* Slip profile card (Log a slip) */
 .slip-profile-card {
   background: white; border-radius: var(--radius-card); padding: 16px; text-align: center;
