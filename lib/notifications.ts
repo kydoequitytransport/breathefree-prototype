@@ -2,17 +2,18 @@ import type { PushSubscriptionSnapshot } from '@/types'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ''
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToArrayBuffer(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
   const rawData = atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
+  const buffer = new ArrayBuffer(rawData.length)
+  const outputArray = new Uint8Array(buffer)
 
   for (let i = 0; i < rawData.length; i += 1) {
     outputArray[i] = rawData.charCodeAt(i)
   }
 
-  return outputArray
+  return buffer
 }
 
 function getSubscriptionSnapshot(sub: PushSubscription): PushSubscriptionSnapshot | null {
@@ -49,7 +50,7 @@ export async function subscribeForPush(): Promise<PushSubscriptionSnapshot> {
 
   const created = await registration.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    applicationServerKey: urlBase64ToArrayBuffer(VAPID_PUBLIC_KEY),
   })
 
   const snapshot = getSubscriptionSnapshot(created)
