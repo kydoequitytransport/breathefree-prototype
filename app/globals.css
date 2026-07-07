@@ -210,6 +210,13 @@ html, body {
   text-decoration: underline; text-underline-offset: 3px;
   background: none; border: none; cursor: pointer; font-family: inherit; padding: 0;
 }
+
+.notif-card {
+  background: white;
+  border-radius: var(--radius-card);
+  border: 1px solid rgba(45,31,18,0.1);
+  padding: 14px;
+}
 .checklist-callout p {
   display: flex; align-items: flex-start; gap: 12px;
   font-size: 14px; line-height: 1.55; color: var(--brown-text);
@@ -834,3 +841,52 @@ html, body {
 /* ---------- Utility ---------- */
 strong { font-weight: 700; }
 a { color: inherit; }
+
+/* ---------- PWA Install CTA ---------- */
+.install-fab-wrap {
+  position: fixed;
+  left: calc(50% + 146px);
+  transform: translateX(-50%);
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.install-fab {
+  border: none;
+  border-radius: 999px;
+  background: var(--dark-brown);
+  color: var(--cream);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 12px;
+  box-shadow: 0 10px 24px rgba(45, 31, 18, 0.2);
+  cursor: pointer;
+}
+.install-fab:active {
+  transform: scale(0.98);
+}
+.install-fab-dismiss {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(45, 31, 18, 0.12);
+  color: var(--dark-brown);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+@media (max-width: 430px) {
+  .install-fab-wrap {
+    left: auto;
+    right: 12px;
+    transform: none;
+  }
+}

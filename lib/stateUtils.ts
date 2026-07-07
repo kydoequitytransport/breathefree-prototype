@@ -163,6 +163,17 @@ export function runMigrations(state: AppState): AppState {
   if (s.hasRefills === undefined) s.hasRefills = s.ritual === 'refills'
   if (s.lifetimeCleanDays === undefined) s.lifetimeCleanDays = s.totalCleanDays || 0
   if (!s.timezone || !String(s.timezone).trim()) s.timezone = detectBrowserTimeZone()
+  if (!s.notificationSettings) {
+    s.notificationSettings = {
+      enabled: false,
+      permission: 'default',
+      reminderTime: '20:00',
+      quietHoursStart: '22:00',
+      quietHoursEnd: '07:00',
+      promptDismissed: false,
+      pushSubscription: null,
+    }
+  }
   return s
 }
 

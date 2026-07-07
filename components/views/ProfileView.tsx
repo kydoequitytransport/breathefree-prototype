@@ -7,6 +7,7 @@ import { recomputeRunState, freeTerm, detectBrowserTimeZone, todayKeyInTimeZone 
 import { WHY_IDENTITY } from '@/constants'
 import { signOut, clearLocalStorage } from '@/lib/userDataService'
 import type { ViewId } from '@/types'
+import { subscribeForPush, unsubscribeFromPush } from '@/lib/notifications'
 
 interface ProfileViewProps {
   onNavigate: (view: ViewId) => void
@@ -26,6 +27,7 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
   const [quitDateDraft, setQuitDateDraft] = useState('')
   const [isEditingTimezone, setIsEditingTimezone] = useState(false)
   const [timezoneDraft, setTimezoneDraft] = useState('')
+  const [isSavingReminders, setIsSavingReminders] = useState(false)
 
   if (!state) return null
 
@@ -33,6 +35,27 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
   const ft = freeTerm(state)
   const money = Math.round(computed.totalCleanDays * (state.dailySpend || 0))
   const whyDisplay = WHY_IDENTITY[state.why] || state.why || `You're becoming ${ft}.`
+  const notificationSettings = state.notificationSettings
+  const remindersEnabled = !!notificationSettings?.enabled
+
+  const updateNotificationSettings = (patch: Partial<NonNullable<typeof state.notificationSettings>>) => {
+    const nextSettings = {
+      enabled: notificationSettings?.enabled || false,
+      permission: notificationSettings?.permission || (typeof Notification !== 'undefined' ? Notification.permission : 'default'),
+      reminderTime: notificationSettings?.reminderTime || '20:00',
+      quietHoursStart: notificationSettings?.quietHoursStart || '22:00',
+      quietHoursEnd: notificationSettings?.quietHoursEnd || '07:00',
+      promptDismissed: notificationSettings?.promptDismissed || false,
+      pushSubscription: notificationSettings?.pushSubscription || null,
+      ...patch,
+    }
+
+    saveState({
+      ...state,
+      notificationSettings: nextSettings,
+    })
+    return nextSettings
+  }
 
   const handleStartWhyEdit = () => {
     setWhyDraft(whyDisplay)
@@ -117,6 +140,62 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
     saveState(updated)
     track('Timezone Updated', { timezone: nextTz })
     setIsEditingTimezone(false)
+  }
+
+  const handleEnableReminders = async () => {
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') return
+
+    setIsSavingReminders(true)
+    try {
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        updateNotificationSettings({ enabled: false, permission, promptDismissed: permission === 'denied' })
+        track('Notifications Permission Result', { permission, source: 'profile' })
+        return
+      }
+
+      const pushSubscription = await subscribeForPush()
+      updateNotificationSettings({
+        enabled: true,
+        permission: 'granted',
+        promptDismissed: true,
+        pushSubscription,
+      })
+      track('Notifications Enabled', { source: 'profile' })
+    } catch (error) {
+      updateNotificationSettings({ enabled: false, pushSubscription: null })
+      track('Notifications Enable Failed', {
+        source: 'profile',
+        message: error instanceof Error ? error.message : 'unknown',
+      })
+    } finally {
+      setIsSavingReminders(false)
+    }
+  }
+
+  const handleDisableReminders = async () => {
+    setIsSavingReminders(true)
+    try {
+      await unsubscribeFromPush()
+    } catch {
+      // No-op: local disable still applies even if unsubscribe fails.
+    }
+
+    updateNotificationSettings({ enabled: false, pushSubscription: null })
+    track('Notifications Disabled', { source: 'profile' })
+    setIsSavingReminders(false)
+  }
+
+  const handleChangeReminderTime = (value: string) => {
+    updateNotificationSettings({ reminderTime: value })
+  }
+
+  const handleChangeQuietStart = (value: string) => {
+    updateNotificationSettings({ quietHoursStart: value })
+  }
+
+  const handleChangeQuietEnd = (value: string) => {
+    updateNotificationSettings({ quietHoursEnd: value })
   }
 
   const quitDateObj = state.quitDate ? new Date(state.quitDate) : null
@@ -267,6 +346,61 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
             </div>
           </div>
         )}
+      </div>
+
+      <div className="quitdate-card" style={{ marginTop: 12 }}>
+        <div style={{ width: '100%' }}>
+          <div className="label">Reminders</div>
+          <div className="value" style={{ marginBottom: 6 }}>
+            {remindersEnabled ? 'On' : 'Off'}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--mid-brown)' }}>
+            Daily nudge, streak protection, and milestone updates.
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            {!remindersEnabled ? (
+              <button className="btn btn--dark" style={{ padding: '9px 12px', fontSize: 14 }} onClick={handleEnableReminders} disabled={isSavingReminders}>
+                {isSavingReminders ? 'Enabling...' : 'Enable reminders'}
+              </button>
+            ) : (
+              <button className="btn btn--cream" style={{ padding: '9px 12px', fontSize: 14 }} onClick={handleDisableReminders} disabled={isSavingReminders}>
+                {isSavingReminders ? 'Saving...' : 'Turn off reminders'}
+              </button>
+            )}
+          </div>
+
+          {remindersEnabled && (
+            <>
+              <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+                <label>Daily reminder time</label>
+                <input
+                  type="time"
+                  value={notificationSettings?.reminderTime || '20:00'}
+                  onChange={(e) => handleChangeReminderTime(e.target.value)}
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label>Quiet start</label>
+                  <input
+                    type="time"
+                    value={notificationSettings?.quietHoursStart || '22:00'}
+                    onChange={(e) => handleChangeQuietStart(e.target.value)}
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label>Quiet end</label>
+                  <input
+                    type="time"
+                    value={notificationSettings?.quietHoursEnd || '07:00'}
+                    onChange={(e) => handleChangeQuietEnd(e.target.value)}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Commitment section removed per design parity */}

@@ -13,6 +13,7 @@ import {
 } from '@/lib/stateUtils'
 import { WHY_IDENTITY, RITUAL_DATA, MILESTONES } from '@/constants'
 import type { ViewId } from '@/types'
+import { subscribeForPush } from '@/lib/notifications'
 
 interface HomeViewProps {
   onNavigate: (view: ViewId) => void
@@ -22,7 +23,7 @@ interface HomeViewProps {
 }
 
 export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: HomeViewProps) {
-  const { state, saveState } = useApp()
+  const { state, saveState, track } = useApp()
   const MIN_MILESTONE_MODAL_DAY = 7
 
   const checkForNewMilestones = useCallback(() => {
@@ -79,6 +80,83 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
       return safeATime - safeBTime
     })
   const primaryRiskyPlan = sortedRiskyPlans[0]
+  const settings = state.notificationSettings
+  const shouldShowReminderPrompt =
+    (!settings || !settings.enabled) &&
+    settings?.permission !== 'denied' &&
+    !settings?.promptDismissed
+
+  const handleEnableReminders = async () => {
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') return
+
+    const nextPermission = await Notification.requestPermission()
+    if (nextPermission !== 'granted') {
+      saveState({
+        ...state,
+        notificationSettings: {
+          enabled: false,
+          permission: nextPermission,
+          reminderTime: settings?.reminderTime || '20:00',
+          quietHoursStart: settings?.quietHoursStart || '22:00',
+          quietHoursEnd: settings?.quietHoursEnd || '07:00',
+          promptDismissed: nextPermission === 'denied',
+          pushSubscription: settings?.pushSubscription || null,
+        },
+      })
+      track('Notifications Permission Result', { permission: nextPermission })
+      return
+    }
+
+    try {
+      const pushSubscription = await subscribeForPush()
+      saveState({
+        ...state,
+        notificationSettings: {
+          enabled: true,
+          permission: 'granted',
+          reminderTime: settings?.reminderTime || '20:00',
+          quietHoursStart: settings?.quietHoursStart || '22:00',
+          quietHoursEnd: settings?.quietHoursEnd || '07:00',
+          promptDismissed: true,
+          pushSubscription,
+        },
+      })
+      track('Notifications Enabled', { source: 'home_prompt' })
+    } catch (error) {
+      saveState({
+        ...state,
+        notificationSettings: {
+          enabled: false,
+          permission: 'granted',
+          reminderTime: settings?.reminderTime || '20:00',
+          quietHoursStart: settings?.quietHoursStart || '22:00',
+          quietHoursEnd: settings?.quietHoursEnd || '07:00',
+          promptDismissed: false,
+          pushSubscription: null,
+        },
+      })
+      track('Notifications Enable Failed', {
+        source: 'home_prompt',
+        message: error instanceof Error ? error.message : 'unknown',
+      })
+    }
+  }
+
+  const handleDismissReminderPrompt = () => {
+    saveState({
+      ...state,
+      notificationSettings: {
+        enabled: settings?.enabled || false,
+        permission: settings?.permission || 'default',
+        reminderTime: settings?.reminderTime || '20:00',
+        quietHoursStart: settings?.quietHoursStart || '22:00',
+        quietHoursEnd: settings?.quietHoursEnd || '07:00',
+        promptDismissed: true,
+        pushSubscription: settings?.pushSubscription || null,
+      },
+    })
+    track('Notifications Prompt Dismissed', { source: 'home_prompt' })
+  }
 
   // Week strip
   const today = new Date()
@@ -171,6 +249,23 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
           )
         })}
       </div>
+
+      {shouldShowReminderPrompt && (
+        <div className="notif-card" style={{ marginTop: 18 }}>
+          <div className="section-label">Stay on track</div>
+          <p style={{ marginTop: 8, fontSize: 14, color: 'var(--brown-text)', lineHeight: 1.5 }}>
+            Turn on reminders for daily check-ins, streak protection, and milestone nudges.
+          </p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button className="btn btn--dark" style={{ padding: '10px 12px', fontSize: 14 }} onClick={handleEnableReminders}>
+              Enable reminders
+            </button>
+            <button className="btn--ghost" style={{ width: 'auto', padding: '10px 4px', fontSize: 14 }} onClick={handleDismissReminderPrompt}>
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* IF / THEN plan */}
       <div className="section-row">

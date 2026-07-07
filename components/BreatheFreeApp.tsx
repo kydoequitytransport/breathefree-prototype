@@ -23,6 +23,11 @@ import { interpolate } from '@/lib/stateUtils'
 import type { ViewId, Milestone } from '@/types'
 import { supabase } from '@/lib/supabase'
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
+}
+
 export default function BreatheFreeApp() {
   const { state, isLoading, saveState, hydrateState, setUserId, setSupaReady } = useApp()
   const { message: toastMsg, visible: toastVisible, toast } = useToast()
@@ -35,6 +40,9 @@ export default function BreatheFreeApp() {
   const [showBeat, setShowBeat] = useState(false)
   const [activeMilestone, setActiveMilestone] = useState<Milestone | null>(null)
   const [resetOverlay, setResetOverlay] = useState<{ email: string } | null>(null)
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [showInstallCTA, setShowInstallCTA] = useState(false)
+  const [showIOSInstallHint, setShowIOSInstallHint] = useState(false)
 
   // Handle Supabase recovery links (password reset)
   useEffect(() => {
@@ -79,6 +87,41 @@ export default function BreatheFreeApp() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => null)
+    }
+  }, [])
+
+  useEffect(() => {
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+    const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent)
+
+    if (isStandalone) return
+    if (localStorage.getItem('bf-install-dismissed') === '1') return
+
+    if (isIOS) {
+      setShowIOSInstallHint(true)
+      setShowInstallCTA(true)
+    }
+
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault()
+      setDeferredInstallPrompt(event as BeforeInstallPromptEvent)
+      setShowInstallCTA(true)
+    }
+
+    const handleInstalled = () => {
+      setDeferredInstallPrompt(null)
+      setShowInstallCTA(false)
+      localStorage.setItem('bf-install-dismissed', '1')
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleInstalled)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleInstalled)
     }
   }, [])
 
@@ -134,6 +177,29 @@ export default function BreatheFreeApp() {
   const handleLogout = () => {
     setActiveView('onboarding')
     setShowNav(false)
+  }
+
+  const handleInstallClick = async () => {
+    if (showIOSInstallHint) {
+      toast('In Safari, tap Share then Add to Home Screen.')
+      return
+    }
+
+    if (!deferredInstallPrompt) return
+
+    await deferredInstallPrompt.prompt()
+    const choice = await deferredInstallPrompt.userChoice
+
+    setDeferredInstallPrompt(null)
+    if (choice.outcome === 'accepted') {
+      setShowInstallCTA(false)
+      localStorage.setItem('bf-install-dismissed', '1')
+    }
+  }
+
+  const handleDismissInstall = () => {
+    setShowInstallCTA(false)
+    localStorage.setItem('bf-install-dismissed', '1')
   }
 
   if (isLoading) {
@@ -250,6 +316,27 @@ export default function BreatheFreeApp() {
 
       {/* Toast */}
       <Toast message={toastMsg} visible={toastVisible} />
+
+      {showInstallCTA && (deferredInstallPrompt || showIOSInstallHint) && (
+        <div className="install-fab-wrap" style={{ bottom: showNav ? 92 : 20 }}>
+          <button
+            type="button"
+            className="install-fab"
+            onClick={handleInstallClick}
+            aria-label="Install BreatheFree app"
+          >
+            Install app
+          </button>
+          <button
+            type="button"
+            className="install-fab-dismiss"
+            onClick={handleDismissInstall}
+            aria-label="Dismiss install prompt"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -153,6 +153,15 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
       ],
       customTriggers: [],
       waves: [],
+      notificationSettings: {
+        enabled: false,
+        permission: 'default',
+        reminderTime: '20:00',
+        quietHoursStart: '22:00',
+        quietHoursEnd: '07:00',
+        promptDismissed: false,
+        pushSubscription: null,
+      },
     }
 
     const computed = recomputeRunState(baseState)

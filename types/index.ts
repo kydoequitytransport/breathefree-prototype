@@ -27,6 +27,27 @@ export interface AppState {
   customTriggers: string[]
   waves: string[]
   signedCommitment?: { name: string; body: string; signedAt: string }
+  notificationSettings?: NotificationSettings
+}
+
+export interface NotificationSettings {
+  enabled: boolean
+  permission: NotificationPermissionState
+  reminderTime: string
+  quietHoursStart: string
+  quietHoursEnd: string
+  promptDismissed?: boolean
+  pushSubscription?: PushSubscriptionSnapshot | null
+}
+
+export type NotificationPermissionState = 'default' | 'granted' | 'denied'
+
+export interface PushSubscriptionSnapshot {
+  endpoint: string
+  keys: {
+    p256dh: string
+    auth: string
+  }
 }
 
 export interface CheckIn {
