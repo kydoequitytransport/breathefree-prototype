@@ -81,9 +81,12 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
     })
   const primaryRiskyPlan = sortedRiskyPlans[0]
   const settings = state.notificationSettings
+  const effectivePermission =
+    settings?.permission ||
+    (typeof Notification !== 'undefined' ? Notification.permission : 'default')
   const shouldShowReminderPrompt =
-    (!settings || !settings.enabled) &&
-    settings?.permission !== 'denied' &&
+    !settings?.enabled &&
+    effectivePermission === 'default' &&
     !settings?.promptDismissed
 
   const handleEnableReminders = async () => {
@@ -126,12 +129,12 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
       saveState({
         ...state,
         notificationSettings: {
-          enabled: false,
+          enabled: true,
           permission: 'granted',
           reminderTime: settings?.reminderTime || '20:00',
           quietHoursStart: settings?.quietHoursStart || '22:00',
           quietHoursEnd: settings?.quietHoursEnd || '07:00',
-          promptDismissed: false,
+          promptDismissed: true,
           pushSubscription: null,
         },
       })

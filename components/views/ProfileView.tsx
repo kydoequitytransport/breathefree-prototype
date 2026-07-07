@@ -163,7 +163,7 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
       })
       track('Notifications Enabled', { source: 'profile' })
     } catch (error) {
-      updateNotificationSettings({ enabled: false, pushSubscription: null })
+      updateNotificationSettings({ enabled: true, permission: 'granted', promptDismissed: true, pushSubscription: null })
       track('Notifications Enable Failed', {
         source: 'profile',
         message: error instanceof Error ? error.message : 'unknown',
@@ -196,6 +196,16 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
 
   const handleChangeQuietEnd = (value: string) => {
     updateNotificationSettings({ quietHoursEnd: value })
+  }
+
+  const handleShowReminderCardAgain = () => {
+    updateNotificationSettings({
+      enabled: false,
+      permission: 'default',
+      promptDismissed: false,
+      pushSubscription: null,
+    })
+    track('Notifications Prompt Reset', { source: 'profile' })
   }
 
   const quitDateObj = state.quitDate ? new Date(state.quitDate) : null
@@ -369,6 +379,16 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
               </button>
             )}
           </div>
+
+          {notificationSettings?.promptDismissed && !remindersEnabled && (
+            <button
+              className="btn--ghost"
+              style={{ width: 'auto', padding: '8px 0', fontSize: 13, marginTop: 6 }}
+              onClick={handleShowReminderCardAgain}
+            >
+              Show home reminder card again
+            </button>
+          )}
 
           {remindersEnabled && (
             <>
