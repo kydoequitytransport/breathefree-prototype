@@ -12,13 +12,14 @@ import { subscribeForPush, unsubscribeFromPush } from '@/lib/notifications'
 interface ProfileViewProps {
   onNavigate: (view: ViewId) => void
   onLogout: () => void
+  onShowInstructions?: () => void
 }
 
 interface ProfileViewPropsExt extends ProfileViewProps {
   onSlip?: () => void
 }
 
-export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsExt) {
+export function ProfileView({ onNavigate, onLogout, onSlip, onShowInstructions }: ProfileViewPropsExt) {
   const { state, saveState, track } = useApp()
   const [isEditingWhy, setIsEditingWhy] = useState(false)
   const [whyDraft, setWhyDraft] = useState('')
@@ -426,6 +427,14 @@ export function ProfileView({ onNavigate, onLogout, onSlip }: ProfileViewPropsEx
       {/* Commitment section removed per design parity */}
 
       {/* Auth */}
+      {/* Slip action */}
+      <div style={{ marginTop: 18 }}>
+        <div className="slip-profile-card" onClick={() => onShowInstructions ? onShowInstructions() : null}>
+          <div className="name">How to use BreatheFree</div>
+          <div className="sub">View the quick guide again anytime.</div>
+        </div>
+      </div>
+
       {/* Slip action */}
       <div style={{ marginTop: 18 }}>
         <div className="slip-profile-card" onClick={() => onSlip ? onSlip() : null}>

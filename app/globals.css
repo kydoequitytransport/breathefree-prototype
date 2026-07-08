@@ -800,6 +800,67 @@ html, body {
   color: var(--brown-text);
 }
 
+/* ---------- Instructions ---------- */
+#instructions { padding: 0; }
+.inst-step {
+  padding: 24px 22px 100px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.inst-toprow {
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.inst-skip {
+  background: none;
+  border: none;
+  color: var(--mid-brown);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.inst-hero-icon {
+  margin-top: 34px;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(92,138,58,0.12);
+}
+.inst-eyebrow {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--leaf);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.inst-step h2 {
+  margin-top: 10px;
+  font-size: 27px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--brown-text);
+}
+.inst-copy {
+  margin-top: 14px;
+  color: var(--mid-brown);
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 35ch;
+}
+.inst-actions {
+  margin-top: auto;
+  padding-top: 26px;
+}
+
 /* ---------- Risky day plans ---------- */
 .risky-plan-card {
   background: var(--lighter-cream); border-radius: var(--radius-card);

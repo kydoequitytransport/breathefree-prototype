@@ -7,6 +7,7 @@ import { useConfetti } from '@/hooks/useConfetti'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { Toast } from '@/components/ui/Toast'
 import { OnboardingView } from '@/components/views/OnboardingView'
+import { InstructionsView } from '@/components/views/InstructionsView'
 import { HomeView } from '@/components/views/HomeView'
 import { CalendarView } from '@/components/views/CalendarView'
 import { TribeView } from '@/components/views/TribeView'
@@ -129,22 +130,44 @@ export default function BreatheFreeApp() {
     if (isLoading || resetOverlay || !initialBootRef.current) return
     initialBootRef.current = false
     if (state?.name && state?.quitDate) {
-      setActiveView('home')
-      setShowNav(true)
+      if (state.instructionTourStatus === 'pending') {
+        setActiveView('instructions')
+        setShowNav(false)
+      } else {
+        setActiveView('home')
+        setShowNav(true)
+      }
     } else {
       setActiveView('onboarding')
       setShowNav(false)
     }
   }, [isLoading, state, resetOverlay])
 
-  const handleOnboardingComplete = () => {
+  const completeInstructionTour = useCallback(() => {
+    if (state && state.instructionTourStatus === 'pending') {
+      saveState({
+        ...state,
+        instructionTourStatus: 'done',
+      })
+    }
+    setActiveView('home')
+    setShowNav(true)
+  }, [saveState, state])
+
+  const handleOnboardingComplete = (options?: { showInstructions?: boolean }) => {
+    if (options?.showInstructions) {
+      setActiveView('instructions')
+      setShowNav(false)
+      return
+    }
+
     setActiveView('home')
     setShowNav(true)
   }
 
   const handleNavigate = (view: ViewId) => {
-    if (view === 'profile') {
-      setActiveView('profile')
+    if (view === 'profile' || view === 'instructions') {
+      setActiveView(view)
       setShowNav(false)
     } else {
       setActiveView(view)
@@ -254,6 +277,9 @@ export default function BreatheFreeApp() {
       {activeView === 'onboarding' && (
         <OnboardingView onComplete={handleOnboardingComplete} />
       )}
+      {activeView === 'instructions' && (
+        <InstructionsView onDone={completeInstructionTour} />
+      )}
       {activeView === 'home' && (
         <HomeView
           onNavigate={handleNavigate}
@@ -276,6 +302,10 @@ export default function BreatheFreeApp() {
           onNavigate={handleBackFromProfile}
           onLogout={handleLogout}
           onSlip={() => setShowSlip(true)}
+          onShowInstructions={() => {
+            setActiveView('instructions')
+            setShowNav(false)
+          }}
         />
       )}
       {activeView === 'triggers' && (

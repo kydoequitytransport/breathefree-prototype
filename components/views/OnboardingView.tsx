@@ -9,7 +9,7 @@ import { LoginModal } from '@/components/modals/LoginModal'
 import { BreathingModal } from '@/components/modals/BreathingModal'
 
 interface OnboardingViewProps {
-  onComplete: () => void
+  onComplete: (options?: { showInstructions?: boolean }) => void
 }
 
 const STEPS = 5
@@ -126,6 +126,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
     const baseState: AppState = {
       name: name.trim(),
       email,
+      instructionTourStatus: 'pending',
       timezone: detectBrowserTimeZone(),
       substance: substance as AppState['substance'],
       why: why.trim(),
@@ -177,7 +178,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
     }
 
     saveState(computed)
-    onComplete()
+    onComplete({ showInstructions: true })
   }
 
   return (

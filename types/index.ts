@@ -1,6 +1,7 @@
 export interface AppState {
   name: string
   email?: string
+  instructionTourStatus?: 'pending' | 'done'
   timezone: string
   substance: 'vape' | 'smoke' | 'both'
   why: string
@@ -102,4 +103,4 @@ export interface Flavor {
   variantId: number
 }
 
-export type ViewId = 'onboarding' | 'home' | 'calendar' | 'tribe' | 'kit' | 'profile' | 'triggers'
+export type ViewId = 'onboarding' | 'instructions' | 'home' | 'calendar' | 'tribe' | 'kit' | 'profile' | 'triggers'
