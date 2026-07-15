@@ -9,7 +9,7 @@ import { LoginModal } from '@/components/modals/LoginModal'
 import { BreathingModal } from '@/components/modals/BreathingModal'
 
 interface OnboardingViewProps {
-  onComplete: (options?: { showInstructions?: boolean }) => void
+  onComplete: () => void
 }
 
 const STEPS = 5
@@ -126,7 +126,6 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
     const baseState: AppState = {
       name: name.trim(),
       email,
-      instructionTourStatus: 'pending',
       timezone: detectBrowserTimeZone(),
       substance: substance as AppState['substance'],
       why: why.trim(),
@@ -154,15 +153,6 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
       ],
       customTriggers: [],
       waves: [],
-      notificationSettings: {
-        enabled: false,
-        permission: 'default',
-        reminderTime: '20:00',
-        quietHoursStart: '22:00',
-        quietHoursEnd: '07:00',
-        promptDismissed: false,
-        pushSubscription: null,
-      },
     }
 
     const computed = recomputeRunState(baseState)
@@ -178,7 +168,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
     }
 
     saveState(computed)
-    onComplete({ showInstructions: true })
+    onComplete()
   }
 
   return (
@@ -290,7 +280,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
               style={{ width: '100%', justifyContent: 'flex-start', padding: '16px 18px' }}
               onClick={() => setSelectedWhy(WHY_OTHER)}
             >
-              Other
+              Others
             </button>
             {selectedWhy === WHY_OTHER && (
               <div className="field" style={{ marginTop: 0 }}>
@@ -368,7 +358,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
               ))}
             </div>
            </div>
-          <div className="field">
+          <div className="field" style={{ marginTop: 20 }}>
             <label>When does your hardest craving usually hit?</label>
             <div className="chips" id="onb-trigger">
               {[

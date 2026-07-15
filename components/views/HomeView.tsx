@@ -255,6 +255,14 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
 
       {shouldShowReminderPrompt && (
         <div className="notif-card" style={{ marginTop: 18 }}>
+          <button
+            type="button"
+            className="notif-card-close"
+            aria-label="Close reminder prompt"
+            onClick={handleDismissReminderPrompt}
+          >
+            ×
+          </button>
           <div className="section-label">Stay on track</div>
           <p style={{ marginTop: 8, fontSize: 14, color: 'var(--brown-text)', lineHeight: 1.5 }}>
             Turn on reminders for daily check-ins, streak protection, and milestone nudges.
@@ -262,9 +270,6 @@ export function HomeView({ onNavigate, onCraving, onSlip, onMilestoneUnlock }: H
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button className="btn btn--dark" style={{ padding: '10px 12px', fontSize: 14 }} onClick={handleEnableReminders}>
               Enable reminders
-            </button>
-            <button className="btn--ghost" style={{ width: 'auto', padding: '10px 4px', fontSize: 14 }} onClick={handleDismissReminderPrompt}>
-              Not now
             </button>
           </div>
         </div>

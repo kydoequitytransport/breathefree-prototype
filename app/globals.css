@@ -212,10 +212,44 @@ html, body {
 }
 
 .notif-card {
+  position: relative;
   background: white;
   border-radius: var(--radius-card);
   border: 1px solid rgba(45,31,18,0.1);
   padding: 14px;
+}
+.notif-card-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(45,31,18,0.08);
+  color: var(--brown-text);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-dev-unlock {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mid-brown);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: default;
+  text-align: left;
 }
 .checklist-callout p {
   display: flex; align-items: flex-start; gap: 12px;

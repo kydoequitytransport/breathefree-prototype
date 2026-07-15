@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Topbar } from '@/components/layout/Topbar'
 import { useApp } from '@/hooks/useApp'
 import { recomputeRunState, freeTerm, detectBrowserTimeZone, todayKeyInTimeZone } from '@/lib/stateUtils'
 import { WHY_IDENTITY } from '@/constants'
 import { signOut, clearLocalStorage } from '@/lib/userDataService'
 import type { ViewId } from '@/types'
-import { subscribeForPush, unsubscribeFromPush } from '@/lib/notifications'
+import { fireLocalTestNotification, subscribeForPush, unsubscribeFromPush, type LocalNotificationScenario } from '@/lib/notifications'
 
 interface ProfileViewProps {
   onNavigate: (view: ViewId) => void
@@ -29,6 +29,9 @@ export function ProfileView({ onNavigate, onLogout, onSlip, onShowInstructions }
   const [isEditingTimezone, setIsEditingTimezone] = useState(false)
   const [timezoneDraft, setTimezoneDraft] = useState('')
   const [isSavingReminders, setIsSavingReminders] = useState(false)
+  const [devNotifUnlockTaps, setDevNotifUnlockTaps] = useState(0)
+  const [showDevNotifButton, setShowDevNotifButton] = useState(false)
+  const devNotifUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   if (!state) return null
 
@@ -199,6 +202,38 @@ export function ProfileView({ onNavigate, onLogout, onSlip, onShowInstructions }
     updateNotificationSettings({ quietHoursEnd: value })
   }
 
+  const handleUnlockDevNotifButton = () => {
+    const next = devNotifUnlockTaps + 1
+    if (next < 5) {
+      setDevNotifUnlockTaps(next)
+      return
+    }
+
+    setDevNotifUnlockTaps(0)
+    setShowDevNotifButton(true)
+    if (devNotifUnlockTimerRef.current) clearTimeout(devNotifUnlockTimerRef.current)
+    devNotifUnlockTimerRef.current = setTimeout(() => {
+      setShowDevNotifButton(false)
+    }, 15000)
+    track('Notifications Dev Test Unlocked', { source: 'profile' })
+  }
+
+  const handleDevNotificationTest = async (scenario: LocalNotificationScenario) => {
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') return
+
+    let permission = Notification.permission
+    if (permission !== 'granted') {
+      permission = await Notification.requestPermission()
+    }
+    if (permission !== 'granted') {
+      track('Notifications Dev Test Blocked', { permission, scenario })
+      return
+    }
+
+    await fireLocalTestNotification(scenario)
+    track('Notifications Dev Test Fired', { source: 'profile', scenario })
+  }
+
   const handleShowReminderCardAgain = () => {
     updateNotificationSettings({
       enabled: false,
@@ -361,7 +396,14 @@ export function ProfileView({ onNavigate, onLogout, onSlip, onShowInstructions }
 
       <div className="quitdate-card" style={{ marginTop: 12 }}>
         <div style={{ width: '100%' }}>
-          <div className="label">Reminders</div>
+          <button
+            type="button"
+            className="notif-dev-unlock"
+            onClick={handleUnlockDevNotifButton}
+            aria-label="Reminders"
+          >
+            Reminders
+          </button>
           <div className="value" style={{ marginBottom: 6 }}>
             {remindersEnabled ? 'On' : 'Off'}
           </div>
@@ -420,6 +462,34 @@ export function ProfileView({ onNavigate, onLogout, onSlip, onShowInstructions }
                 </div>
               </div>
             </>
+          )}
+
+          {showDevNotifButton && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 11, color: 'var(--mid-brown)', marginBottom: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Dev test notifications
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <button className="btn--ghost" style={{ width: 'auto', padding: '8px 0', fontSize: 13, textAlign: 'left' }} onClick={() => handleDevNotificationTest('daily')}>
+                  Daily check-in
+                </button>
+                <button className="btn--ghost" style={{ width: 'auto', padding: '8px 0', fontSize: 13, textAlign: 'left' }} onClick={() => handleDevNotificationTest('streak')}>
+                  Streak protection
+                </button>
+                <button className="btn--ghost" style={{ width: 'auto', padding: '8px 0', fontSize: 13, textAlign: 'left' }} onClick={() => handleDevNotificationTest('milestone')}>
+                  Milestone
+                </button>
+                <button className="btn--ghost" style={{ width: 'auto', padding: '8px 0', fontSize: 13, textAlign: 'left' }} onClick={() => handleDevNotificationTest('risky')}>
+                  Risky day
+                </button>
+                <button className="btn--ghost" style={{ width: 'auto', padding: '8px 0', fontSize: 13, textAlign: 'left' }} onClick={() => handleDevNotificationTest('weekly')}>
+                  Weekly recap
+                </button>
+                <button className="btn--ghost" style={{ width: 'auto', padding: '8px 0', fontSize: 13, textAlign: 'left' }} onClick={() => handleDevNotificationTest('generic')}>
+                  Generic
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
